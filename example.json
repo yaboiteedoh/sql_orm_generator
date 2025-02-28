@@ -1,0 +1,56 @@
+{
+  "teams": {
+    "dataclass_name": "Team",
+    "group_keys": {
+      "conference": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "division": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }    },
+    "object_keys": {
+      "code": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "nhlid": {
+        "type": "INT",
+        "params": "NOT NULL"
+      },
+      "name": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }
+    }
+  },
+  "players": {
+    "dataclass_name": "Player",
+    "group_keys": {
+      "team_rowid": {
+        "type": "TEXT",
+        "params": "NOT NULL",
+        "references": "teams(rowid)"
+      }, 
+      "status": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "name": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "position": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }
+    },
+    "object_keys": {
+      "nhlid": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }
+    }
+  }
+}
