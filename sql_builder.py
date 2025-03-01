@@ -8,47 +8,51 @@ from sys import argv
 
 
 def main():
+    with open(f'{argv[1]}.json') as f:
+        db_config = json.load(f)
+    for db_name, config in db_config.items():
+        generate_database(db_name, config)
+
+
+###############################################################################
+
+
+def generate_database(db_name, db_config):
     modules = {}
     dataclasses = StringIO()
     database = StringIO()
     root_in_py = StringIO()
     database = StringIO()
 
-    with open(f'{argv[1]}.json') as f:
-        db_config = json.load(f)
-
-    db = Path('database')
+    db = Path(db_name)
     db.mkdir()
 
-    in_py = Path('database', '__init__.py')
+    in_py = Path(db_name, '__init__.py')
     with open(in_py, 'w') as f:
-        f.write('from .database import Database')
+        f.write(f'from .database import Database')
 
-    classes = Path('database', 'classes.py')
+    classes = Path(db_name, 'classes.py')
     with open('table_base_class.py', 'r') as f:
         base_class = f.read()
     with open(classes, 'w') as f:
         f.write(base_class.replace('    ', '\t'))
 
-    create_table_classes(db_config, modules)
+    create_table_classes(db_config, modules, db_name)
     create_table_dataclasses(db_config, dataclasses)
     create_database_class(db_config, database)
-    create_filesystem(db_config, modules)
+    create_filesystem(db_config, modules, db_name)
 
-    dc_path = Path('database', 'dataclasses.py')
+    dc_path = Path(db_name, 'dataclasses.py')
     with open(dc_path, 'w') as f:
         f.write(dataclasses.getvalue().replace('    ', '\t'))
 
-    database_path = Path('database', 'database.py')
+    database_path = Path(db_name, 'database.py')
     with open(database_path, 'w') as f:
         f.write(database.getvalue().replace('    ', '\t'))
 
-    from database import Database
-    db_object = Database(testing=True)
+    m = __import__(db_name)
+    db_object = m.Database(testing=True)
     
-
-###############################################################################
-
 
 def create_database_class(db_config, b):
     b.write(
@@ -136,9 +140,9 @@ class Database:
             )
 
 
-def create_filesystem(db_config, modules):
+def create_filesystem(db_config, modules, db_name):
     for table in db_config:
-        create_package(table, modules[table['table_name']])
+        create_package(table, modules[table['table_name']], db_name)
 
 
 def create_table_dataclasses(db_config, dataclasses):
@@ -183,15 +187,15 @@ class {dataclass_name}:
     )
 
 
-def create_table_classes(db_config, modules):
+def create_table_classes(db_config, modules, db_name):
     initialize_buffers(db_config, modules)
 
     for table in db_config:
-        create_module(modules[table['table_name']])
+        create_module(modules[table['table_name']], db_name)
 
     for table in db_config:
         table_name = table['table_name']
-        config_dict = initialize_class(modules[table_name], table['table_name'], table)
+        config_dict = initialize_class(modules[table_name], table['table_name'], table, db_name)
         build_table(**config_dict)
 
 
@@ -200,10 +204,10 @@ def initialize_buffers(db_config, modules):
         modules[table['table_name']] = StringIO()
 
 
-def create_package(table, class_buffer):
-    package = Path('database', table['table_name'])
-    class_file = Path('database', table['table_name'], '_0_0.py')
-    init_file = Path('database', table['table_name'], '__init__.py')
+def create_package(table, class_buffer, db_name):
+    package = Path(db_name, table['table_name'])
+    class_file = Path(db_name, table['table_name'], '_0_0.py')
+    init_file = Path(db_name, table['table_name'], '__init__.py')
     package.mkdir()
     init_buffer = StringIO()
     init_buffer.write(
@@ -225,19 +229,19 @@ def {table['table_name']}_table(testing=False):
 
 
 
-def create_module(buffer):
+def create_module(buffer, db_name):
     buffer.write(
-            '''
+            f'''
 import sqlite3
 from pathlib import Path
 from io import StringIO
 
-from database.classes import SQLiteTable
+from {db_name}.classes import SQLiteTable
 '''
     )
 
 
-def initialize_class(buffer, table_name, table_config):
+def initialize_class(buffer, table_name, table_config, db_name):
     dataclass = ''
     group_keys = {}
     object_keys = {}
@@ -252,7 +256,7 @@ def initialize_class(buffer, table_name, table_config):
                 object_keys = value
             case 'other_keys':
                 other_keys = value
-    buffer.write(f'from database.dataclasses import {dataclass}\n\n\n')
+    buffer.write(f'from {db_name}.dataclasses import {dataclass}\n\n\n')
     buffer.write('###############################################################################\n\n\n')
     return {
             'b': buffer,
@@ -260,7 +264,8 @@ def initialize_class(buffer, table_name, table_config):
             'dataclass': dataclass,
             'group_keys': group_keys,
             'object_keys': object_keys,
-            'other_keys': other_keys
+            'other_keys': other_keys,
+            'db_name': db_name
         }
 
 
@@ -270,15 +275,16 @@ def build_table(
     dataclass,
     group_keys,
     object_keys,
-    other_keys
+    other_keys,
+    db_name
 ):
     b.write(
         f"""class {table_name.capitalize()}Table(SQLiteTable):
     def __init__(self, testing=False):
         if not testing:
-            self.db_dir = str(Path('database', 'data.db'))
+            self.db_dir = str(Path('{db_name}', 'data.db'))
         else:
-            self.db_dir = str(Path('database', 'test.db'))
+            self.db_dir = str(Path('{db_name}', 'test.db'))
         self.dataclass = {dataclass}
 
         self._table_name = '{table_name}'
