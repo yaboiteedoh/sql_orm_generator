@@ -23,16 +23,12 @@
         "type": "TEXT",
         "params": "NOT NULL"
       }
-    }
+    },
+    "other_keys": {}
   },
   "players": {
     "dataclass_name": "Player",
     "group_keys": {
-      "team_rowid": {
-        "type": "TEXT",
-        "params": "NOT NULL",
-        "references": "teams(rowid)"
-      }, 
       "status": {
         "type": "TEXT",
         "params": "NOT NULL"
@@ -48,6 +44,54 @@
     },
     "object_keys": {
       "nhlid": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }
+    },
+    "other_keys": {}
+  },
+  "games": {
+    "dataclass_name": "Game",
+    "group_keys": {
+      "status": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      }
+    },
+    "object_keys": {
+      "nhlid": {
+        "type": "INT",
+        "params": "NOT NULL"
+      }
+    },
+    "other_keys": {
+      "timestamp": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "start_time": {
+        "type": "TEXT",
+        "params": "NOT NULL"
+      },
+      "home_team_rowid": {
+        "type": "INT",
+        "params": "NOT NULL",
+        "references": "teams(rowid)"
+      },
+      "home_team_points": {
+        "type": "INT",
+        "params": "NOT NULL"
+      },
+      "away_team_rowid": {
+        "type": "INT",
+        "params": "NOT NULL",
+        "references": "teams(rowid)"
+      },
+      "away_team_points": {
+        "type": "INT",
+        "params": "NOT NULL"
+      },
+      "clock": {
         "type": "TEXT",
         "params": "NOT NULL"
       }

@@ -53,14 +53,17 @@ def initialize_class(buffer, table_name, table_config):
     dataclass = ''
     group_keys = {}
     object_keys = {}
+    other_keys = {}
     for option, value in table_config.items():
         match option:
-            case "dataclass_name":
+            case 'dataclass_name':
                 dataclass = value
-            case "group_keys":
+            case 'group_keys':
                 group_keys = value
-            case "object_keys":
+            case 'object_keys':
                 object_keys = value
+            case 'other_keys':
+                other_keys = value
     buffer.write(f'from utils.dataclasses import {dataclass}\n\n\n')
     buffer.write('###############################################################################\n\n\n')
     return {
@@ -68,7 +71,8 @@ def initialize_class(buffer, table_name, table_config):
             'table_name': table_name,
             'dataclass': dataclass,
             'group_keys': group_keys,
-            'object_keys': object_keys
+            'object_keys': object_keys,
+            'other_keys': other_keys
         }
 
 
@@ -77,7 +81,8 @@ def build_table(
     table_name,
     dataclass,
     group_keys,
-    object_keys
+    object_keys,
+    other_keys
 ):
     b.write(
         f"""class {table_name.capitalize()}Table(SQLiteTable):
@@ -134,6 +139,8 @@ def build_table(
     for item in group_keys.items():
         keys.append(item)
     for item in object_keys.items():
+        keys.append(item)
+    for item in other_keys.items():
         keys.append(item)
 
     keys.append(rowid)
