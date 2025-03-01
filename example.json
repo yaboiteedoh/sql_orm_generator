@@ -1,5 +1,6 @@
-{
-  "teams": {
+[
+  {
+    "table_name": "teams",
     "dataclass_name": "Team",
     "group_keys": {
       "conference": {
@@ -26,7 +27,8 @@
     },
     "other_keys": {}
   },
-  "players": {
+  {
+    "table_name": "players",
     "dataclass_name": "Player",
     "group_keys": {
       "status": {
@@ -50,7 +52,8 @@
     },
     "other_keys": {}
   },
-  "games": {
+  {
+    "table_name": "games",
     "dataclass_name": "Game",
     "group_keys": {
       "status": {
@@ -96,5 +99,35 @@
         "params": "NOT NULL"
       }
     }
+  },
+  {
+    "table_name": "pstats",
+    "dataclass_name": "PStat",
+    "group_keys": {
+      "game_rowid": {
+        "type": "INT",
+        "params": "NOT NULL",
+        "references": "games(rowid)"
+      },
+      "player_rowid": {
+        "type": "INT",
+        "params": "NOT NULL",
+        "references": "players(rowid)"
+      },
+      "shots_on_goal": {
+        "type": "INT",
+        "params": "NOT NULL"
+      },
+      "goals": {
+        "type": "INT",
+        "params": "NOT NULL"
+      },
+      "assists": {
+        "type": "INT",
+        "params": "NOT NULL"
+      }
+    },
+    "object_keys": {},
+    "other_keys": {}
   }
-}
+]

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from io import StringIO
 from sys import argv
 
@@ -8,33 +9,216 @@ from sys import argv
 
 def main():
     modules = {}
-    classes = StringIO()
     dataclasses = StringIO()
+    database = StringIO()
+    root_in_py = StringIO()
     database = StringIO()
 
     with open(f'{argv[1]}.json') as f:
         db_config = json.load(f)
 
-    initialize_buffers(db_config, modules)
+    db = Path('database')
+    db.mkdir()
+
+    in_py = Path('database', '__init__.py')
+    with open(in_py, 'w') as f:
+        f.write('from .database import Database')
+
+    classes = Path('database', 'classes.py')
+    with open('table_base_class.py', 'r') as f:
+        base_class = f.read()
+    with open(classes, 'w') as f:
+        f.write(base_class.replace('    ', '\t'))
+
+    create_table_classes(db_config, modules)
+    create_table_dataclasses(db_config, dataclasses)
+    create_database_class(db_config, database)
+    create_filesystem(db_config, modules)
+
+    dc_path = Path('database', 'dataclasses.py')
+    with open(dc_path, 'w') as f:
+        f.write(dataclasses.getvalue().replace('    ', '\t'))
+
+    database_path = Path('database', 'database.py')
+    with open(database_path, 'w') as f:
+        f.write(database.getvalue().replace('    ', '\t'))
     
-    for table_name in db_config.keys():
-        create_module(modules[table_name])
-
-    for table_name, table_config in db_config.items():
-        config_dict = initialize_class(modules[table_name], table_name, table_config)
-        build_table(**config_dict)
-
-    for module, buffer in modules.items():
-        # print(module, '\n\t', buffer)
-        print(buffer.getvalue())
-
 
 ###############################################################################
 
 
+def create_database_class(db_config, b):
+    b.write(
+        '''
+import sqlite3
+from io import StringIO
+
+'''
+)
+    for table in db_config:
+        b.write(f'from .{table['table_name']} import {table['table_name']}_table\n')
+
+    b.write('''
+    
+###############################################################################
+
+
+class Database:
+    def __init__(self, testing=False):
+        results = StringIO() if testing else None
+    
+''')
+    for table in db_config:
+        b.write(f'\t\t\tself.{table['table_name']} = {table['table_name']}(testing)\n')
+
+    b.write('\n\t\t\tself.build_sequence = [\n')
+    for i, table in enumerate(db_config):
+        if i < len(db_config) - 1:
+            b.write(f'\t\t\t\tself.{table['table_name']},\n')
+        else:
+            b.write(
+                f'''
+                self.{table['table_name']}
+            ]
+
+            if testing:
+                try:
+                    self._test(results)
+                except BaseException as e:
+                    print(results.getvalue())
+                    raise e
+
+'''
+            )
+    b.write(
+        '''
+    #------------------------------------------------------# 
+
+
+    def init_dbs(self, testing=False, results=None):
+        for table in self.build_sequence:
+            table.init_db()
+            if testing:
+                results.write(f'\\n\\ninitializing {table._table_name} table')
+                table._test(results)
+
+
+    #::::::::::::::::::::::::::::::::::::::::::::::::::::::# 
+
+
+    def _test(self, results, version_number):
+        results.write(f'\\n\\n\\tSTARTING DATABASE INTEGRATION TEST\\n\\n')
+        teardown_sequence = self.build_sequence[::1]
+        for table in teardown_sequence:
+            with sqlite3.connect(table.db_dir) as con:
+                cur = con.cursor()
+                sql = f'DROP TABLE {table._table_name}'
+                try:
+                    cur.execute(sql)
+                except sqlite3.OperationalError as e:
+                    error = str(e)
+                    if error[:13] == 'no such table':
+                        results.write(f'\\ntried dropping nonexistent table: test.{error[15:]}')
+                        con.rollback()
+                        continue
+                else:
+                    results.write(f'\\ndropped table: test.{table._table_name}')
+        self.init_dbs(testing=True, results=results)
+        results.write('\\n\\n')
+        print(results.getvalue())
+
+
+###############################################################################
+'''
+            )
+
+
+def create_filesystem(db_config, modules):
+    for table in db_config:
+        create_package(table, modules[table['table_name']])
+
+
+def create_table_dataclasses(db_config, dataclasses):
+    dataclasses.write(
+        '''
+from dataclasses import dataclass, field, asdict
+
+
+###############################################################################
+
+'''
+    )
+    for table in db_config:
+        create_dataclass(table, table['dataclass_name'], dataclasses)
+    dataclasses.write('\n###############################################################################')
+
+
+def create_dataclass(table, dataclass_name, b):
+    b.write(
+        f'''
+@dataclass(slots=True)
+class {dataclass_name}:
+'''
+    )
+    for key_name, key in table['group_keys'].items():
+        python_type = type_map(key['type'])
+        b.write(f'\t{key_name}: {python_type}\n')
+    for key_name, key in table['object_keys'].items():
+        python_type = type_map(key['type'])
+        b.write(f'\t{key_name}: {python_type}\n')
+    for key_name, key in table['other_keys'].items():
+        python_type = type_map(key['type'])
+        b.write(f'\t{key_name}: {python_type}\n')
+    b.write(
+        '''
+    @property
+    def as_dict(self):
+        return asdict(self)
+
+'''
+    )
+
+
+def create_table_classes(db_config, modules):
+    initialize_buffers(db_config, modules)
+
+    for table in db_config:
+        create_module(modules[table['table_name']])
+
+    for table in db_config:
+        table_name = table['table_name']
+        config_dict = initialize_class(modules[table_name], table['table_name'], table)
+        build_table(**config_dict)
+
+
 def initialize_buffers(db_config, modules):
-    for table_name in db_config.keys():
-        modules[table_name] = StringIO()
+    for table in db_config:
+        modules[table['table_name']] = StringIO()
+
+
+def create_package(table, class_buffer):
+    package = Path('database', table['table_name'])
+    class_file = Path('database', table['table_name'], '_0_0.py')
+    init_file = Path('database', table['table_name'], '__init__.py')
+    package.mkdir()
+    init_buffer = StringIO()
+    init_buffer.write(
+        f'''
+def {table['table_name']}_table():
+    from ._0_0 import {table['table_name']}_table
+
+    return {table['table_name']}_table
+
+
+###############################################################################
+'''
+    )
+    with open(class_file, 'w') as f:
+        f.write(class_buffer.getvalue().replace('    ', '\t'))
+
+    with open(init_file, 'w') as f:
+        f.write(init_buffer.getvalue().replace('    ', '\t'))
+
 
 
 def create_module(buffer):
@@ -44,7 +228,7 @@ import sqlite3
 from pathlib import Path
 from io import StringIO
 
-from utils.classes import SQLiteTable
+from database.classes import SQLiteTable
 '''
     )
 
@@ -64,7 +248,7 @@ def initialize_class(buffer, table_name, table_config):
                 object_keys = value
             case 'other_keys':
                 other_keys = value
-    buffer.write(f'from utils.dataclasses import {dataclass}\n\n\n')
+    buffer.write(f'from database.dataclasses import {dataclass}\n\n\n')
     buffer.write('###############################################################################\n\n\n')
     return {
             'b': buffer,
@@ -150,12 +334,12 @@ def build_table(
         key_name, key_type, key_params, key_references = unpack_key(key)
         if key_references is not None:
             foreign_keys.append((key_name, key_references))
-        b.write(f'\t\t\t{key_name} {key_type} {key_params}')
+        b.write(f'\t\t\t\t\t{key_name} {key_type} {key_params}')
         if i == len(keys) - 1:
             if foreign_keys != []:
                 b.write(',')
                 for f_key, references in foreign_keys:
-                    b.write(f'\n\t\t\tFOREIGN KEY({f_key})\n\t\t\t\tREFERENCES {references}')
+                    b.write(f'\n\t\t\t\t\tFOREIGN KEY({f_key})\n\t\t\t\t\t\tREFERENCES {references}')
         else:
             b.write(',\n')
     else:
@@ -180,17 +364,17 @@ def build_table(
     for i, key in enumerate(keys):
         key_name, key_type, key_params, _ = unpack_key(key)
         if i < len(keys) - 1:
-            b.write(f'\t\t\t{key_name},\n')
+            b.write(f'\t\t\t\t\t{key_name},\n')
         else:
-            b.write('\t\t)\n\t\tVALUES (\n')
+            b.write('\t\t\t\t)\n\t\t\t\tVALUES (\n')
 
     for i, key in enumerate(keys):
         key_name, key_type, key_params, _ = unpack_key(key)
         if i < len(keys) - 1:
-            b.write(f'\t\t\t:{key_name},\n')
+            b.write(f'\t\t\t\t\t:{key_name},\n')
         else:
             b.write(
-                f"""\t\t)
+                f"""\t\t\t\t)
             '''
             cur.execute(sql, team.as_dict)
             return cur.lastrowid
@@ -219,8 +403,7 @@ def build_table(
             )
 
     for key_name, key in group_keys.items():
-        type_map = {'TEXT': 'str', 'INT': 'int'}
-        python_type = type_map[key['type']]
+        python_type = type_map(key['type'])
         b.write(
             f'''
 
@@ -235,8 +418,7 @@ def build_table(
         )
 
     for key_name, key in object_keys.items():
-        type_map = {'TEXT': 'str', 'INT': 'int'}
-        python_type = type_map[key['type']]
+        python_type = type_map(key['type'])
         b.write(
             f'''
 
@@ -270,6 +452,11 @@ def unpack_key(key):
     if 'references' in key_dict.keys():
         key_references = key_dict['references']
     return (key_name, key_type, key_params, key_references)
+
+
+def type_map(t):
+    tm = {'TEXT': 'str', 'INT': 'int'}
+    return tm[t]
 
 
 ###############################################################################
