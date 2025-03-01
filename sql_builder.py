@@ -42,6 +42,9 @@ def main():
     database_path = Path('database', 'database.py')
     with open(database_path, 'w') as f:
         f.write(database.getvalue().replace('    ', '\t'))
+
+    from database import Database
+    db_object = Database(testing=True)
     
 
 ###############################################################################
@@ -69,24 +72,24 @@ class Database:
     
 ''')
     for table in db_config:
-        b.write(f'\t\t\tself.{table['table_name']} = {table['table_name']}(testing)\n')
+        b.write(f'\t\tself.{table['table_name']} = {table['table_name']}_table(testing)\n')
 
-    b.write('\n\t\t\tself.build_sequence = [\n')
+    b.write('\n\t\tself.build_sequence = [\n')
     for i, table in enumerate(db_config):
         if i < len(db_config) - 1:
             b.write(f'\t\t\t\tself.{table['table_name']},\n')
         else:
             b.write(
-                f'''
-                self.{table['table_name']}
-            ]
+            f'''
+            self.{table['table_name']}
+        ]
 
-            if testing:
-                try:
-                    self._test(results)
-                except BaseException as e:
-                    print(results.getvalue())
-                    raise e
+        if testing:
+            try:
+                self._test(results)
+            except BaseException as e:
+                print(results.getvalue())
+                raise e
 
 '''
             )
@@ -106,7 +109,7 @@ class Database:
     #::::::::::::::::::::::::::::::::::::::::::::::::::::::# 
 
 
-    def _test(self, results, version_number):
+    def _test(self, results):
         results.write(f'\\n\\n\\tSTARTING DATABASE INTEGRATION TEST\\n\\n')
         teardown_sequence = self.build_sequence[::1]
         for table in teardown_sequence:
@@ -170,7 +173,8 @@ class {dataclass_name}:
         python_type = type_map(key['type'])
         b.write(f'\t{key_name}: {python_type}\n')
     b.write(
-        '''
+        '''\trowid: int | None = field(default=None)
+
     @property
     def as_dict(self):
         return asdict(self)
@@ -204,10 +208,10 @@ def create_package(table, class_buffer):
     init_buffer = StringIO()
     init_buffer.write(
         f'''
-def {table['table_name']}_table():
+def {table['table_name']}_table(testing=False):
     from ._0_0 import {table['table_name']}_table
 
-    return {table['table_name']}_table
+    return {table['table_name']}_table(testing)
 
 
 ###############################################################################
@@ -272,34 +276,34 @@ def build_table(
         f"""class {table_name.capitalize()}Table(SQLiteTable):
     def __init__(self, testing=False):
         if not testing:
-            self.db_dir = str(Path('database', 'data.db')
+            self.db_dir = str(Path('database', 'data.db'))
         else:
-            self.db_dir = str(Path('database', 'test.db')
+            self.db_dir = str(Path('database', 'test.db'))
         self.dataclass = {dataclass}
 
         self._table_name = '{table_name}'
 """
     )
 
-    b.write('\tself._group_keys = {\n')
+    b.write('\t\tself._group_keys = {\n')
     for i, key in enumerate(group_keys.keys()):
-        b.write(f"\t\t'{key}': self.read_by_{key}")
+        b.write(f"\t\t\t'{key}': self.read_by_{key}")
         if i == len(group_keys.keys()) - 1:
             b.write('\n')
         else:
             b.write(',\n')
     else:
-        b.write('\t}\n')
+        b.write('\t\t}\n')
 
-    b.write('\tself._object_keys = {\n')
+    b.write('\t\tself._object_keys = {\n')
     for i, key in enumerate(object_keys.keys()):
-        b.write(f"\t\t'{key}': self.read_by_{key}")
+        b.write(f"\t\t\t'{key}': self.read_by_{key}")
         if i == len(object_keys.keys()) - 1:
             b.write('\n')
         else:
             b.write(',\n')
     else:
-        b.write('\t}')
+        b.write('\t\t}')
 
     b.write(
         f"""
@@ -317,7 +321,7 @@ def build_table(
 """
     )
 
-    rowid = ('rowid', {'type': 'INT', 'params': 'PRIMARY KEY AUTOINCREMENT'})
+    rowid = ('rowid', {'type': 'INTEGER', 'params': 'PRIMARY KEY AUTOINCREMENT'})
     
     keys = []
     for item in group_keys.items():
@@ -363,20 +367,21 @@ def build_table(
 
     for i, key in enumerate(keys):
         key_name, key_type, key_params, _ = unpack_key(key)
-        if i < len(keys) - 1:
+        if i < len(keys) - 2:
             b.write(f'\t\t\t\t\t{key_name},\n')
-        else:
-            b.write('\t\t\t\t)\n\t\t\t\tVALUES (\n')
+        elif i < len(keys) - 1:
+            b.write(f'\t\t\t\t\t{key_name}\n\t\t\t\t)\n\t\t\t\tVALUES (\n')
 
     for i, key in enumerate(keys):
         key_name, key_type, key_params, _ = unpack_key(key)
-        if i < len(keys) - 1:
+        if i < len(keys) - 2:
             b.write(f'\t\t\t\t\t:{key_name},\n')
-        else:
-            b.write(
-                f"""\t\t\t\t)
-            '''
-            cur.execute(sql, team.as_dict)
+        elif i < len(keys) - 1:
+            b.write(f"\t\t\t\t\t:{key_name}\n\t\t\t\t)\n\t\t\t'''")
+
+    b.write(
+        f"""
+            cur.execute(sql, {table_name[:-1]}.as_dict)
             return cur.lastrowid
 
             
@@ -397,7 +402,7 @@ def build_table(
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
             sql = 'SELECT * FROM {table_name} WHERE rowid=?'
-            cur.execute(sql)
+            cur.execute(sql, (rowid,))
             return cur.fetchone()
 """
             )
@@ -440,8 +445,49 @@ def {table_name}_table(testing=False):
 
 
 ###############################################################################
-'''
+
+
+test_data = '''
     )
+    test_data = [{}, {}, {}, {}]
+    build_test_data('group', group_keys, test_data)
+    build_test_data('object', object_keys, test_data)
+    build_test_data('other', other_keys, test_data)
+    b.write(str(test_data))
+    b.write(
+        '''
+
+
+###############################################################################'''
+    )
+    
+
+
+def build_test_data(context, data_dict, test_data):
+    for key_name, key in data_dict.items():
+        if key_name != 'rowid':
+            python_type = type_map(key['type'])
+            match python_type:
+                case 'str':
+                    match context:
+                        case 'group':
+                            for obj in [test_data[0], test_data[1]]:
+                                obj[key_name] = 'TEST 1'
+                            test_data[2][key_name] = 'TEST 2'
+                            test_data[3][key_name] = 'TEST 3'
+                        case 'object' | 'other':
+                            for i, obj in enumerate(test_data):
+                                obj[key_name] = f'TEST {i}'
+                case 'int':
+                    match context:
+                        case 'group':
+                            for obj in [test_data[0], test_data[1]]:
+                                obj[key_name] = 1
+                            test_data[2][key_name] = 2
+                            test_data[3][key_name] = 3
+                        case 'object' | 'other':
+                            for i, obj in enumerate(test_data):
+                                obj[key_name] = i
 
 
 def unpack_key(key):
@@ -455,7 +501,7 @@ def unpack_key(key):
 
 
 def type_map(t):
-    tm = {'TEXT': 'str', 'INT': 'int'}
+    tm = {'TEXT': 'str', 'INTEGER': 'int'}
     return tm[t]
 
 

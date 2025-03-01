@@ -17,7 +17,7 @@
         "params": "NOT NULL"
       },
       "nhlid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       },
       "name": {
@@ -63,7 +63,7 @@
     },
     "object_keys": {
       "nhlid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       }
     },
@@ -77,21 +77,21 @@
         "params": "NOT NULL"
       },
       "home_team_rowid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL",
         "references": "teams(rowid)"
       },
       "home_team_points": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       },
       "away_team_rowid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL",
         "references": "teams(rowid)"
       },
       "away_team_points": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       },
       "clock": {
@@ -105,25 +105,25 @@
     "dataclass_name": "PStat",
     "group_keys": {
       "game_rowid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL",
         "references": "games(rowid)"
       },
       "player_rowid": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL",
         "references": "players(rowid)"
       },
       "shots_on_goal": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       },
       "goals": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       },
       "assists": {
-        "type": "INT",
+        "type": "INTEGER",
         "params": "NOT NULL"
       }
     },
