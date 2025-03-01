@@ -1,5 +1,5 @@
 {
-  "database_1": [
+  "ltl_db": [
     {
       "table_name": "teams",
       "dataclass_name": "Team",
