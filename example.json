@@ -11,7 +11,8 @@
         "division": {
           "type": "TEXT",
           "params": "NOT NULL"
-        }    },
+        }    
+      },
       "object_keys": {
         "code": {
           "type": "TEXT",
