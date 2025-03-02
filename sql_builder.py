@@ -52,7 +52,7 @@ def generate_database(db_name, db_config):
 
     m = __import__(db_name)
     db_object = m.Database(testing=True)
-    
+
 
 def create_database_class(db_config, b):
     b.write(
@@ -453,15 +453,33 @@ def {table_name}_table(testing=False):
 ###############################################################################
 
 
-test_data = '''
+test_data = [
+'''
     )
     test_data = [{}, {}, {}, {}]
     build_test_data('group', group_keys, test_data)
     build_test_data('object', object_keys, test_data)
     build_test_data('other', other_keys, test_data)
-    b.write(str(test_data))
+    for i, test_dict in enumerate(test_data):
+        b.write('\t{\n')
+        for j, item in enumerate(test_dict.items()):
+            key, value = item
+
+            if isinstance(value, str):
+                value = f"'{value}'"
+
+            if j < len(test_dict.items()) - 1:
+                b.write(f"\t\t'{key}': {value},\n")
+            else:
+                b.write(f"\t\t'{key}': {value}\n")
+
+        if i < len(test_data) - 1:
+            b.write('\t},\n')
+        else:
+            b.write('\t}\n')
+
     b.write(
-        '''
+        ''']
 
 
 ###############################################################################'''
