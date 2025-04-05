@@ -15,54 +15,63 @@ reach into each table to manipulate its data. The `__init__()` function of each 
 aside from being able to detail which columns you want query functions for, there's also support for
 - grouping columns, to return any objects with data matching the single input value.
 - filtering columns, to return any objects that meet all query requirements.
+- generating multiple parallel db files, though currently each gets output to a different module
+    - I may instead rework this to create multiple database classes in the same main database module which all get sent to the `root/__init__.py`
 
 ## json format
 ```
 {
     'database name': [....................... list of tables
-        'table name':
-            'name of the table',
-        'dataclass name':
-            'name of the associated dataclass',
-        'keys': [............................ list of sql columns
-            {
-                'name': 
-                    'name of the corresponding db column',
-                'data_type':
-                    'SQL data type, converted to python data type internally'
-                'params':
-                    'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string'
-                'key_class_dict': {
-                    'returns':
-                        '"list" or "group" to determine fetchall vs fetchone',
-                    'references':
-                        '"table(key name)" of the referenced column'
-                }
-            }
-        ],
-        'groups': [.......................... list of similar sql columns
-            {
-                'name': 
-                    'name of the group, used for function names',
-                'keys': [
-                    'key name',
-                    'key name',
-                    ...
-                ]
-            }
-        ],
-        'filters': [......................... list of contextual sql columns
-            {
-                'name':
-                    'name of the filter, used for function names',
-                'keys': [
-                    'key name',
-                    'key name',
-                    ...
-                ]
-            }
-        ]
-    ]
+        {
+            'table name':
+                'name of the table',
+            'dataclass name':
+                'name of the associated dataclass',
+            'keys': [............................ list of sql columns
+                {
+                    'name': 
+                        'name of the corresponding db column',
+                    'data_type':
+                        'SQL data type, converted to python data type internally'
+                    'params':
+                        'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string'
+                    'key_class_dict': {
+                        'returns':
+                            '"list" or "group" to determine fetchall vs fetchone',
+                        'references':
+                            '"table(key name)" of the referenced column'
+                    }
+                },
+                ...
+            ],
+            'groups': [.......................... list of similar sql columns
+                {
+                    'name': 
+                        'name of the group, used for function names',
+                    'keys': [
+                        'key name',
+                        'key name',
+                        ...
+                    ]
+                },
+                ...
+            ],
+            'filters': [......................... list of contextual sql columns
+                {
+                    'name':
+                        'name of the filter, used for function names',
+                    'keys': [
+                        'key name',
+                        'key name',
+                        ...
+                    ]
+                },
+                ...
+            ]
+        },
+        ...
+    ],
+    ...
 }
 ```
 
@@ -87,3 +96,4 @@ aside from being able to detail which columns you want query functions for, ther
     - godot app that does the same thing without having to run flask
         - I think I can use the http request node to build out a rudimentary update system on remote devices
         - This option is also more secure, as I don't have to worry about managing any user data whatsoever
+        - file browser node to control output location
