@@ -1,0 +1,278 @@
+{
+    "ltl_db": [
+        {
+            "table_name": "teams",
+            "dataclass_name": "Team",
+            "keys": [
+                {
+                    "name": "conference",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "division",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "code",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single"
+                    }
+                },
+                {
+                    "name": "nhlid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single"
+                    }
+                },
+                {
+                    "name": "name",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single"
+                    }
+                }
+            ],
+            "groups": [],
+            "filters": []
+        },
+        {
+            "table_name": "players",
+            "dataclass_name": "Player",
+            "keys": [
+                {
+                    "name": "nhlid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single"
+                    }
+                },
+                {
+                    "name": "team_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single",
+                        "references": "teams(rowid)"
+                    }
+                },
+                {
+                    "name": "position",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "name",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                }
+            ],
+            "groups": [],
+            "filters": [
+                {
+                    "name": "team_and_position",
+                    "keys": [
+                        "team_rowid",
+                        "position"
+                    ]
+                }
+            ]
+        },
+        {
+            "table_name": "games",
+            "dataclass_name": "Game",
+            "keys": [
+                {
+                    "name": "nhlid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "single"
+                    }
+                },
+                {
+                    "name": "start_time",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "status",
+                    "data_type": "TEXT",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "away_team_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "references": "teams(rowid)"
+                    }
+                },
+                {
+                    "name": "away_team_points",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                },
+                {
+                    "name": "home_team_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "references": "teams(rowid)"
+                    }
+                },
+                {
+                    "name": "home_team_points",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                }
+            ],
+            "groups": [
+                {
+                    "name": "team_rowid",
+                    "keys": [
+                        "away_team_rowid",
+                        "home_team_rowid"
+                    ]
+                }
+            ],
+            "filters": []
+        },
+        {
+            "table_name": "player_stats",
+            "dataclass_name": "PlayerStat",
+            "keys": [
+                {
+                    "name": "game_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "player_nhlid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group"
+                    }
+                },
+                {
+                    "name": "player_team_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group",
+                        "references": "teams(nhlid)"
+                    }
+                },
+                {
+                    "name": "opp_team_rowid",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                        "returns": "group",
+                        "references": "teams(nhlid)"
+                    }
+                },
+                {
+                    "name": "goals",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                },
+                {
+                    "name": "assists",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                },
+                {
+                    "name": "shots_on_goal",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                },
+                {
+                    "name": "blocked_shots",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                },
+                {
+                    "name": "hits",
+                    "data_type": "INTEGER",
+                    "params": "NOT NULL",
+                    "key_class_dict": {
+                    }
+                }
+            ],
+            "groups": [
+                {
+                    "name": "team_rowid",
+                    "keys": [
+                        "player_team_rowid",
+                        "opp_team_rowid"
+                    ]
+                }
+            ],
+            "filters": [
+                {
+                    "name": "game_and_player",
+                    "keys": [
+                        "game_rowid",
+                        "player_nhlid"
+                    ]
+                },
+                {
+                    "name": "team_and_player",
+                    "keys": [
+                        "player_team_rowid",
+                        "player_nhlid"
+                    ]
+                },
+                {
+                    "name": "opp_and_player",
+                    "keys": [
+                        "opp_team_rowid",
+                        "player_nhlid"
+                    ]
+                }
+            ]
+        }
+    ]
+}
