@@ -77,6 +77,13 @@ aside from being able to detail which columns you want query functions for, ther
 - `classes/classes.py`
 - `classes/dataclasses.py`
 
-### shell functionality
+### Shell Functionality
 - package as a cli operable dev tool
 - `sql_gen {json file}` to read a config file anywhere and generate a python module locally
+
+### Frontend
+- couple options here
+    - web app consisting of a dynamic form to generate a config file
+    - godot app that does the same thing without having to run flask
+        - I think I can use the http request node to build out a rudimentary update system on remote devices
+        - This option is also more secure, as I don't have to worry about managing any user data whatsoever
