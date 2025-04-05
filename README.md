@@ -28,7 +28,7 @@ aside from being able to detail which columns you want query functions for, ther
                 'name': 
                     'name of the corresponding db column',
                 'data_type':
-                    'SQL data type, converted to python data type internall'
+                    'SQL data type, converted to python data type internally'
                 'params':
                     'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string'
                 'key_class_dict': {
