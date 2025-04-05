@@ -40,7 +40,7 @@ aside from being able to detail which columns you want query functions for, ther
                     'data_type':
                         'SQL data type, converted to python data type internally'
                     'params':
-                        'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string'
+                        'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string (or '')'
                     'key_class_dict': {
                         *'returns':
                             '"list" or "group" to determine fetchall vs fetchone',
