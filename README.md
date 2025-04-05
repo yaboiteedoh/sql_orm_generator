@@ -1,5 +1,6 @@
 # sql_orm_generator
 an orm generator that spits out a complete database object based on a json config file detailing your sql tables.
+
 the generated code is meant to be boilerplate, to be built upon as needed, but works with standard library so as to be lightweight and flexible for any implementation.
 
 ## operation
