@@ -43,8 +43,8 @@ aside from being able to detail which columns you want query functions for, ther
                 'name': 
                     '*name of the group, used for function names*',
                 'keys': [
-                    '*key name*'
-                    '*key name*'
+                    '*key name*',
+                    '*key name*',
                     ...
                 ]
             }
