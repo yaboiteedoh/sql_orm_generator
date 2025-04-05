@@ -16,7 +16,6 @@ aside from being able to detail which columns you want query functions for, ther
 - filtering columns, to return any objects that meet all query requirements
 
 ## json format
-```
 {
     'database name': [
         'table name':
@@ -63,7 +62,6 @@ aside from being able to detail which columns you want query functions for, ther
         ]
     ]
 }
-```
 
 
 ## TODO
