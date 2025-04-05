@@ -79,10 +79,17 @@ aside from being able to detail which columns you want query functions for, ther
 ### Filters
 - allow for filtering with groups
 
+### Join Tables
+- seperate table class
+    - inhreits from SQLiteTable
+    - gonna need to adjust the templating according to join syntax
+- this is gonna change fastest as I learn more about joins, which will test this system's ability to grow as my dev journey continues
+
 ### Templates
 - `root/__init__.py`
 - `root/database.py`
 - `tables/__init__.py`
+- `tables/join_table.py`
 - `classes/classes.py`
 - `classes/dataclasses.py`
 
