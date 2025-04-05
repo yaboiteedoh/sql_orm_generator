@@ -40,7 +40,7 @@ aside from being able to detail which columns you want query functions for, ther
                 }
             }
         ],
-        'groups': [.......................... list of grouped sql columns
+        'groups': [.......................... list of similar sql columns
             {
                 'name': 
                     'name of the group, used for function names',
