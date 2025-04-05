@@ -19,12 +19,12 @@ aside from being able to detail which columns you want query functions for, ther
 ## json format
 ```
 {
-    'database name': [....................... a list of tables
+    'database name': [....................... list of tables
         'table name':
             'name of the table',
         'dataclass name':
             'name of the associated dataclass',
-        'keys': [............................ a list of sql columns
+        'keys': [............................ list of sql columns
             {
                 'name': 
                     'name of the corresponding db column',
@@ -40,7 +40,7 @@ aside from being able to detail which columns you want query functions for, ther
                 }
             }
         ],
-        'groups': [.......................... a list of grouped sql columns
+        'groups': [.......................... list of grouped sql columns
             {
                 'name': 
                     'name of the group, used for function names',
@@ -51,7 +51,7 @@ aside from being able to detail which columns you want query functions for, ther
                 ]
             }
         ],
-        'filters': [......................... a list of contextual sql columns
+        'filters': [......................... list of contextual sql columns
             {
                 'name':
                     'name of the filter, used for function names',
