@@ -1,20 +1,20 @@
 # sql_orm_generator
-an orm generator that spits out a complete database object based on a json config file detailing your sql tables
-the generated code is meant to be boilerplate, to be built upon as needed, but works with standard library so as to be lightweight and flexible for any implementation
+an orm generator that spits out a complete database object based on a json config file detailing your sql tables.
+the generated code is meant to be boilerplate, to be built upon as needed, but works with standard library so as to be lightweight and flexible for any implementation.
 
 ## operation
-to generate a module, run `python3 v2.py {target json file (in root directory of the generator)}`
-to use the generated module, just drop it in to your project, and import it like a custom module
+to generate a module, run `python3 v2.py {target json file (in root directory of the generator)}`.
+to use the generated module, just drop it in to your project, and import it like a custom module.
 
 `from {database name} import Database`
-- instantiating the database object initializes the sql tables locally
+- instantiating the database object initializes the sql tables locally.
 
-reach into each table to manipulate its data. The `__init__()` function of each table will show you a directory of relevant functions
+reach into each table to manipulate its data. The `__init__()` function of each table will show you a directory of relevant functions.
 
 ## functionality
 aside from being able to detail which columns you want query functions for, there's also support for
-- grouping columns, to return any objects with data matching the single input value
-- filtering columns, to return any objects that meet all query requirements
+- grouping columns, to return any objects with data matching the single input value.
+- filtering columns, to return any objects that meet all query requirements.
 
 ## json format
 ```
@@ -64,7 +64,7 @@ aside from being able to detail which columns you want query functions for, ther
         ]
     ]
 }
-
+```
 
 ## TODO
 ### Filters
