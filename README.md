@@ -34,7 +34,7 @@ aside from being able to detail which columns you want query functions for, ther
             'dataclass name':
                 'name of the associated dataclass',
             'keys': [................................ list of sql columns
-                {
+                *{
                     'name': 
                         'name of the corresponding db column',
                     'data_type':
@@ -42,16 +42,16 @@ aside from being able to detail which columns you want query functions for, ther
                     'params':
                         'SQL Parameters (AUTOINCREMENT, NOT NULL, ...) all in one string'
                     'key_class_dict': {
-                        'returns':
+                        *'returns':
                             '"list" or "group" to determine fetchall vs fetchone',
-                        'references':
+                        *'references':
                             '"table(key name)" of the referenced column'
                     }
                 },
                 ...
             ],
             'groups': [.............................. list of similar sql columns
-                {
+                *{
                     'name': 
                         'name of the group, used for function names',
                     'keys': [
@@ -63,7 +63,7 @@ aside from being able to detail which columns you want query functions for, ther
                 ...
             ],
             'filters': [............................. list of contextual sql columns
-                {
+                *{
                     'name':
                         'name of the filter, used for function names',
                     'keys': [
@@ -80,6 +80,7 @@ aside from being able to detail which columns you want query functions for, ther
     ...
 }
 ```
+\* - *optional*
 
 ## TODO
 ### Filters
