@@ -10,9 +10,11 @@ to generate a module, run
 to use the generated module, just drop it in to your project, and import it like a custom module.
 
 `from {database name} import Database`
-- instantiating the database object initializes the sql tables locally.
+
+instantiating the database object initializes the sql tables locally.
 
 reach into each table to manipulate its data. The `__init__()` function of each table will show you a directory of relevant functions.
+
 `all_objects = db.table.read_all()`
 
 ## functionality
