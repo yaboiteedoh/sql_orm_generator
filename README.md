@@ -4,6 +4,7 @@ an orm generator that spits out a complete database object based on a json confi
 ## operation
 to generate a module, run `python3 v2.py {target json file (in root directory of the generator)}`
 to use the generated module, just drop it in to your project, and import it like a custom module
+
 `from {database name} import Database`
 - instantiating the database object initializes the sql tables locally
 
