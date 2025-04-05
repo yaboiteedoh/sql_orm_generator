@@ -76,3 +76,7 @@ aside from being able to detail which columns you want query functions for, ther
 - `tables/__init__.py`
 - `classes/classes.py`
 - `classes/dataclasses.py`
+
+### shell functionality
+- package as a cli operable dev tool
+- `sql_gen {json file}` to read a config file anywhere and generate a python module locally
