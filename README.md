@@ -28,7 +28,7 @@ aside from being able to detail which columns you want query functions for, ther
 ```
 {
     'database name': [............................... list of tables
-        {
+        *{
             'table name':
                 'name of the table',
             'dataclass name':
