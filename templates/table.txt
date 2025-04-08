@@ -110,7 +110,7 @@ class {{ table.dataclass }}sTable(SQLiteTable):
             return cur.fetchone(){% endfor %}{% for group in table.key_groups %}
 
 
-    def read_by_{{ group.name }}(self, {{ group.name }}: {{ group.keys[0].py_data_class }}) -> list[{{ table.dataclass }}]:
+    def read_by_{{ group.name }}(self, {{ group.name }}: {{ group.py_data_type }}) -> list[{{ table.dataclass }}]:
         with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
@@ -123,16 +123,20 @@ class {{ table.dataclass }}sTable(SQLiteTable):
             return cur.fetchall(){% endfor %}{% for filter in table.filters %}
 
 
-    def read_by_{{ filter.name }}(self, {% for i, key in enumerate(filter.keys) %}{{ key.name }}: {{ key.py_data_type }}{% if i < filter.length %}, {% endif %}{% endfor%}) -> list[{{ table.dataclass }}] | {{ table.dataclass }}:
+    def read_by_{{ filter.name }}(self, {% for i, key in enumerate(filter.queries) %}{{ key.name }}: {{ key.py_data_type }}{% if i < filter.length %}, {% endif %}{% endfor%}) -> list[{{ table.dataclass }}] | {{ table.dataclass }}:
         with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
             sql = '''
                 SELECT * FROM {{ table.name }}
-                WHERE {{ filter.keys[0].name }}=?{% for key in filter.keys[1:] %}
-                AND {{ key.name }}=?{% endfor %}
+                WHERE
+                    {% if isinstance(filter.queries[0], DBKeyGroup) %}({{ filter.queries[0].keys[0].name }}=?{% for key in filter.queries[0].keys %} OR {{ key.name }}=?{% endfor %}){% else %}{{ filter.queries[0].name }}=?{% endif %}{% for key in filter.queries[1:] %}{% if isinstance(key, DBKeyGroup) %}
+                    AND
+                        ({% for i, group_key in enumerate(key.keys) %}{{ group_key.name }}=?{% if i < key.length %} OR {% endif %}{% endfor %}){% else %}
+                    AND
+                        {{ key.name }}=?{% endif %}{% endfor %}
             '''
-            cur.execute(sql, ({% for i, key in enumerate(filter.keys) %}{{ key.name }}{% if i < filter.length %}, {% endif %}{% endfor %}))
+            cur.execute(sql, ({% for i, key in enumerate(filter.queries) %}{% if not isinstance(key, DBKeyGroup) %}{{ key.name }}{% if i < filter.length %}, {% endif %}{% else %}{% for j, group_key in enumerate(key.keys) %}{{ key.name }}{% if j < key.length %}, {% endif %}{% if i < filter.length %}, {% endif %}{% endfor %}{% endif %}{% endfor %}))
             response = cur.fetchall()
             
             if not response:

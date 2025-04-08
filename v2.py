@@ -1,7 +1,7 @@
 import json
 from io import StringIO
 from pathlib import Path
-from sys import argv
+from sys import argv, exit
 
 from jinja2 import Template
 
@@ -10,7 +10,13 @@ from jinja2 import Template
 
 
 def main():
-    with open(f'{argv[1]}.json') as f:
+    try:
+        json_filename = argv[1]
+    except IndexError:
+        print('Please provide a valid config filename')
+        exit(1)
+
+    with open(f'{json_filename}.json') as f:
         db_config = json.load(f)
     for db_name, config in db_config.items():
         db = Database(db_name, config)
@@ -20,7 +26,7 @@ def main():
 ###############################################################################
 
 
-TABLE = Path('templates', 'table.txt')
+TABLE_TEMPLATE = Path('templates', 'table.txt')
 
 
 ###############################################################################
@@ -67,18 +73,19 @@ class Table:
             key for key in self.keys
             if not key.classes.check
         ]
-        for key in self.keys:
-            if 'references' in key.classes.check:
-                self.references = True
 
         self.key_groups = [
             DBKeyGroup(self.keys, **group)
             for group in groups
         ]
         self.filters = [
-            DBKeyFilter(self.keys, **filter)
+            DBKeyFilter(self.keys, self.key_groups, **filter)
             for filter in filters
         ]
+
+        for key in self.keys:
+            if 'references' in key.classes.check:
+                self.references = True
 
 
 class DBKey:
@@ -89,18 +96,19 @@ class DBKey:
         params,
         key_class_dict
     ):
-        self.name = name
         self.data_type = data_type
-        self.params = params
-        self.classes = DBKeyClass(**key_class_dict)
-
         match self.data_type:
             case 'TEXT':
                 self.py_data_type = 'str'
             case 'INTEGER':
                 self.py_data_type = 'int'
             case _:
-                self.py_data_type = f'INVALID DATA TYPE IN CONFIG: {self.data_type}'
+                msg = f'INVALID DATA TYPE IN CONFIG: {self.name}, {self.data_type}'
+                raise NotImplementedError(msg)
+
+        self.name = name
+        self.params = params
+        self.classes = DBKeyClass(**key_class_dict)
 
 
 class DBKeyGroup:
@@ -116,22 +124,28 @@ class DBKeyGroup:
             if key.name in keys
         ]
         self.length = len(self.keys) - 1
+        self.py_data_type = self.keys[0].py_data_type
 
 
 class DBKeyFilter:
     def __init__(
         self,
         key_list,
+        group_list,
         name,
         keys
     ):
         self.name = name
-        self.keys = []
         self.keys = [
             key for key in key_list
             if key.name in keys
         ]
-        self.length = len(self.keys) - 1
+        self.groups = [
+            group for group in group_list
+            if group.name in keys
+        ]
+        self.queries = self.keys + self.groups
+        self.length = len(self.queries) - 1
 
 
 class DBKeyClass:
@@ -147,10 +161,6 @@ class DBKeyClass:
             self.check.append('returns')
         if references:
             self.check.append('references')
-        if group:
-            self.check.append('group')
-        if filters:
-            self.check.append('filters')
 
         self.returns = returns
         self.references = references
@@ -193,13 +203,15 @@ def generate_filesystem(db):
 
 
 def render_table_template(table: Table, fs):
-    with open(TABLE, 'r') as f:
+    with open(TABLE_TEMPLATE, 'r') as f:
         template_string = f.read()
     
     template = Template(template_string)
     table_class = template.render(
         table=table,
-        enumerate=enumerate
+        enumerate=enumerate,
+        isinstance=isinstance,
+        DBKeyGroup=DBKeyGroup
     )
     
     with open(fs['tables'][table.name], 'w') as f:

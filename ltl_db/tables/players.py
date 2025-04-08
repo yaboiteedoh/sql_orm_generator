@@ -143,8 +143,10 @@ class PlayersTable(SQLiteTable):
             cur.row_factory = self._dataclass_row_factory
             sql = '''
                 SELECT * FROM players
-                WHERE team_rowid=?
-                AND position=?
+                WHERE
+                    team_rowid=?
+                    AND
+                        position=?
             '''
             cur.execute(sql, (team_rowid, position))
             response = cur.fetchall()

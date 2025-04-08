@@ -165,7 +165,16 @@
                     ]
                 }
             ],
-            "filters": []
+            "filters": [
+                {
+                    "name": "status_and_team",
+                    "keys": [
+                        "status",
+                        "team_rowid",
+                        "start_time"
+                    ]
+                }
+            ]
         },
         {
             "table_name": "player_stats",

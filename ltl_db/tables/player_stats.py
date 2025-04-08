@@ -162,7 +162,7 @@ class PlayerStatsTable(SQLiteTable):
             return cur.fetchall()
 
 
-    def read_by_team_rowid(self, team_rowid: ) -> list[PlayerStat]:
+    def read_by_team_rowid(self, team_rowid: int) -> list[PlayerStat]:
         with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
@@ -181,8 +181,10 @@ class PlayerStatsTable(SQLiteTable):
             cur.row_factory = self._dataclass_row_factory
             sql = '''
                 SELECT * FROM player_stats
-                WHERE game_rowid=?
-                AND player_nhlid=?
+                WHERE
+                    game_rowid=?
+                    AND
+                        player_nhlid=?
             '''
             cur.execute(sql, (game_rowid, player_nhlid))
             response = cur.fetchall()
@@ -200,8 +202,10 @@ class PlayerStatsTable(SQLiteTable):
             cur.row_factory = self._dataclass_row_factory
             sql = '''
                 SELECT * FROM player_stats
-                WHERE player_nhlid=?
-                AND player_team_rowid=?
+                WHERE
+                    player_nhlid=?
+                    AND
+                        player_team_rowid=?
             '''
             cur.execute(sql, (player_nhlid, player_team_rowid))
             response = cur.fetchall()
@@ -219,8 +223,10 @@ class PlayerStatsTable(SQLiteTable):
             cur.row_factory = self._dataclass_row_factory
             sql = '''
                 SELECT * FROM player_stats
-                WHERE player_nhlid=?
-                AND opp_team_rowid=?
+                WHERE
+                    player_nhlid=?
+                    AND
+                        opp_team_rowid=?
             '''
             cur.execute(sql, (player_nhlid, opp_team_rowid))
             response = cur.fetchall()

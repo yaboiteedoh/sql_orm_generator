@@ -84,9 +84,6 @@ aside from being able to detail which columns you want query functions for, ther
 \* - *optional*
 
 ## TODO
-### Filters
-- allow for filtering with groups
-
 ### Join Tables
 - seperate table class
     - inhreits from SQLiteTable
@@ -100,6 +97,9 @@ aside from being able to detail which columns you want query functions for, ther
 - `tables/join_table.py`
 - `classes/classes.py`
 - `classes/dataclasses.py`
+
+### Jinja Env Variables
+- look into this for passing around common functions (enumerate, classes, macros...)
 
 ### Shell Functionality
 - package as a cli operable dev tool

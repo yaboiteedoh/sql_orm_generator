@@ -33,6 +33,7 @@ class GamesTable(SQLiteTable):
             'team_rowid': self.read_by_team_rowid,
         }
         self._filters = { 
+            'status_and_team': self.read_by_status_and_team,
         }
 
 
@@ -140,7 +141,7 @@ class GamesTable(SQLiteTable):
             return cur.fetchone()
 
 
-    def read_by_team_rowid(self, team_rowid: ) -> list[Game]:
+    def read_by_team_rowid(self, team_rowid: int) -> list[Game]:
         with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
@@ -151,6 +152,29 @@ class GamesTable(SQLiteTable):
             '''
             cur.execute(sql, (team_rowid, team_rowid))
             return cur.fetchall()
+
+
+    def read_by_status_and_team(self, start_time: int, status: str, team_rowid: int) -> list[Game] | Game:
+        with sqlite3.connect(self.db_dir) as con:
+            cur = con.cursor()
+            cur.row_factory = self._dataclass_row_factory
+            sql = '''
+                SELECT * FROM games
+                WHERE
+                    start_time=?
+                    AND
+                        status=?
+                    AND
+                        (away_team_rowid=? OR home_team_rowid=?)
+            '''
+            cur.execute(sql, (start_time, status, team_rowid, team_rowid))
+            response = cur.fetchall()
+            
+            if not response:
+                return response
+            if len(response) == 1:
+                return response[0]
+            return response
 
 
     #------------------------------------------------------# 
