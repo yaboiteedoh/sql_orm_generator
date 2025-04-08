@@ -81,7 +81,7 @@ aside from being able to detail which columns you want query functions for, ther
     ...
 }
 ```
-\* - *optional*
+***\* - optional***
 
 ## TODO
 ### Join Tables
