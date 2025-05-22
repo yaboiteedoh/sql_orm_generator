@@ -1,0 +1,487 @@
+import json
+import tkinter as tk
+from tkinter import ttk
+
+from utils import snake_case, pascal_case
+from .components import COMPONENTS
+
+
+class Frame:
+    def __init__(
+        self,
+        parent_obj=None,
+        parent_frame=None,
+        max_columns=False,
+        grid_children=False
+    ):
+        self.parent_obj = parent_obj
+        self.parent_frame = parent_frame
+        self.max_columns = max_columns
+        self.grid_children = grid_children
+
+        self.frame = ttk.Frame(self.parent_frame)
+        self.components = []
+
+        self.cur_column = 0
+        self.cur_row = 0
+
+        self.build_frame()
+
+
+    def build_frame(self):
+        pass
+
+
+    def update(self):
+        self.parent_obj.update()
+
+
+    def add_component(self, tk_type, params={}, parent=None):
+        if not tk_type in COMPONENTS:
+            raise NotImplementedError
+
+        parent = parent if parent else self.frame
+        component = COMPONENTS[tk_type](parent, **params)
+        self.components.append(component)
+        return component
+
+    
+    def child_frame(self, **kwargs):
+        return Frame(parent_obj=self, parent_frame=self.frame, **kwargs)
+
+    
+    def pack(self):
+        if self.grid_children:
+            self.grid_components()
+        else:
+            for component in self.components:
+                component.pack
+        self.frame.pack()
+
+
+    def grid_components(self):
+        for component in self.components:
+            component.grid(row=self.cur_row, column=self.cur_column)
+            self.cur_column += 1
+
+            if self.max_columns:
+                if self.cur_column > self.max_columns:
+                    self.cur_row += 1
+                    self.cur_column = 0
+
+                        
+class ColumnFrame(Frame):
+    def build_frame(self):
+        self.data_type = tk.StringVar(value='TEXT')
+        self.not_null = tk.StringVar(value = '')
+        self.column_classes = {
+            'returns': [
+                tk.BooleanVar(),
+                tk.StringVar(value='')
+            ],
+            'references': [
+                tk.BooleanVar(),
+                tk.StringVar(value=''),
+                tk.StringVar(value='')
+            ]
+        }
+        self.column_classes['returns'][0].set(False)
+        self.column_classes['references'][0].set(False)
+
+        # Options frame contains structure relevant data and controls
+        self.options_frame = self.child_frame(max_columns=2, grid_children=True)
+        self.options_frame.add_component(
+            'label',
+            {'text': 'Column Name: '}
+        )
+        self.column_name = self.options_frame.add_component('entry')
+        self.options_frame.add_component(
+            'button',
+            {
+                'text': 'Remove Column',
+                'command': lambda: self.parent_obj.remove_column(self)
+            }
+        )
+        self.options_frame.pack()
+        
+        # Config frame contains option controls
+        self.config_frame = self.child_frame()
+        self.config_frame.add_component(
+            'check_button',
+            {
+                'text': 'NOT NULL',
+                'variable': self.not_null,
+                'onvalue': 'NOT NULL',
+                'offvalue': ''
+            }
+        )
+        self.config_frame.pack()
+
+        self.data_type_selector = self.config_frame.child_frame(grid_children=True)
+        self.data_type_selector.add_component(
+            'label',
+            {'text': 'Data Type: '}
+        )
+        for data_type in ['TEXT', 'INTEGER']:
+            self.data_type_selector.add_component(
+                'radio_button',
+                {
+                    'text': data_type,
+                    'variable': self.data_type,
+                    'value': data_type
+                }
+            )
+        self.data_type_selector.pack()
+
+        self.column_class_frame = self.config_frame.child_frame(
+            max_columns=2,
+            grid_children=True
+        )
+
+        self.return_selector = self.column_class_frame.child_frame(grid_children=True)
+        self.return_checkbox = self.return_selector.add_component(
+            'check_button',
+            {
+                'text': 'Returns',
+                'variable': self.column_classes['returns'][0],
+                'onvalue': True,
+                'offvalue': False,
+                'command': self.toggle_return_selector
+            }
+        )
+        for return_type in ['Single', 'Group']:
+            self.return_selector.add_component(
+                'radio_button',
+                {
+                    'text': return_type,
+                    'variable': self.column_classes['returns'][1],
+                    'value': return_type.lower()
+                }
+            )
+
+        self.references_selector = self.column_class_frame.child_frame(
+            grid_children=True
+        )
+        self.references_checkbox = self.references_selector.add_component(
+            'check_button',
+            {
+                'text': 'References',
+                'variable': self.column_classes['references'][0],
+                'onvalue': True,
+                'offvalue': False,
+                'command': self.toggle_references_selector
+            }
+        )
+        self.references_selector.add_component(
+            'label',
+            {'text': 'Table: '}
+        )
+        self.table_selector = self.references_selector.add_component(
+            'option_menu',
+            {
+                'variable': self.column_classes['references'][1],
+                'value': ''
+            }
+        )
+        self.references_selector.add_component(
+            'label',
+            {'text': 'Column: '}
+        )
+        self.column_selector = self.references_selector.add_component(
+            'option_menu',
+            {
+                'variable': self.column_classes['references'][2],
+                'value': ''
+            }
+        )
+        self.table_selector.bind('<Button-1>', lambda e: self.update_tables())
+        self.column_selector.bind('<Button-1>', lambda e: self.update_columns())
+
+        self.column_class_frame.pack()
+        self.return_selector.grid_components()
+        self.return_selector.frame.grid(column=1, row=0)
+        self.references_selector.grid_components()
+        self.references_selector.frame.grid(column=1, row=1)
+        self.toggle_return_selector(value=False)
+        self.toggle_references_selector(value=False)
+        
+        self.update()
+
+
+    def toggle_return_selector(self, value=None):
+        s = self.column_classes['returns'][0].get()
+        if s != None:
+            state = tk.NORMAL if s else tk.DISABLED
+
+        if value != None:
+            state = tk.NORMAL if value else tk.DISABLED
+
+        for component in self.return_selector.components:
+            if component == self.return_checkbox:
+                continue
+            component.configure(state=state)
+
+
+    def toggle_references_selector(self, value=None):
+        s = self.column_classes['references'][0].get()
+        if s != None:
+            state = tk.NORMAL if s else tk.DISABLED
+
+        if value != None:
+            state = tk.NORMAL if value else tk.DISABLED
+
+        for component in self.references_selector.components:
+            if component == self.references_checkbox:
+                continue
+            component.configure(state=state)
+
+
+    def update_tables(self):
+        tables = self.parent_obj.parent_obj.table_names
+        menu = self.table_selector['menu']
+        menu.delete(0, 'end')
+
+        for table in tables:
+            menu.add_command(
+                label=table,
+                command=lambda value=table: (
+                    self.column_classes['references'][1].set(value)
+                )
+            )
+
+
+    def update_columns(self):
+        columns = None
+        table_name = self.column_classes['references'][1].get()
+        menu = self.column_selector['menu']
+
+        for table in self.parent_obj.parent_obj.tables:
+            if table.name == table_name:
+                columns = table.column_names
+        if not columns:
+            return
+
+        menu.delete(0, 'end')
+        for column in columns:
+            menu.add_command(
+                label=column,
+                command = lambda value=column: (
+                    self.column_classes['references'][2].set(value)
+                )
+            )
+
+
+    @property
+    def name(self):
+        return self.column_name.get()
+
+
+    @property
+    def config(self):
+        params = f'{self.not_null.get()}'
+
+        config_dict = {
+            'name': self.name,
+            'data_type': self.data_type.get(),
+            'params': params,
+            'key_class_dict': {}
+        }
+
+        if self.column_classes['returns'][0].get():
+            returns = self.column_classes['returns'][1].get()
+            config_dict['key_class_dict']['returns'] = returns
+        if self.column_classes['references'][0].get():
+            data = self.column_classes['references']
+            references = f'{snake_case(data[1].get())}({snake_case(data[2].get())})'
+            config_dict['key_class_dict']['references'] = references
+
+        return config_dict
+
+
+
+class TableFrame(Frame):
+    def build_frame(self):
+        self.columns = []
+
+        # Options frame contains structure relevant data and controls
+        self.options_frame = self.child_frame(grid_children=True)
+        self.options_frame.add_component(
+            'label',
+            {'text': 'Table Name: '}
+        )
+        self.table_name = self.options_frame.add_component('entry')
+        self.options_frame.add_component(
+            'button',
+            {
+                'text': 'Remove Table',
+                'command': lambda: self.parent_obj.remove_table(self)
+            }
+        )
+        self.button_matrix = self.options_frame.child_frame(
+            max_columns=1,
+            grid_children=True
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Add Column', 'command': self.add_column}
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Clear Columns', 'command': self.clear_columns}
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Add Group', 'command': self.add_column}
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Clear Groups', 'command': self.clear_columns}
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Add Filter', 'command': self.add_column}
+        )
+        self.button_matrix.add_component(
+            'button',
+            {'text': 'Clear Filters', 'command': self.clear_columns}
+        )
+        self.options_frame.pack()
+        self.button_matrix.grid_components()
+        self.button_matrix.frame.grid(column=1, row=1)
+
+        
+        # Columns frame is a container for ColumnFrame objects
+        self.columns_frame = self.child_frame()
+        self.columns_frame.pack()
+
+        self.update()
+
+
+    def add_column(self):
+        column = ColumnFrame(
+            parent_obj=self,
+            parent_frame=self.columns_frame.frame
+        )
+        self.columns.append(column)
+        column.pack()
+        self.update()
+
+
+    def remove_column(self, column):
+        for component in column.frame.winfo_children():
+            component.destroy()
+        self.columns.remove(column)
+        column.frame.destroy()
+        self.update()
+
+
+    def clear_columns(self):
+        for column in self.columns:
+            for component in column.frame.winfo_children():
+                component.destroy()
+            column.frame.destroy()
+        self.columns = []
+        self.update()
+
+
+    @property
+    def name(self):
+        return self.table_name.get()
+
+    
+    @property
+    def column_names(self):
+        return [column.name for column in self.columns]
+
+
+    @property
+    def config(self):
+        return {
+            'table_name': snake_case(self.name),
+            'dataclass_name': pascal_case(self.name)[:-1],
+            'keys': [column.config for column in self.columns],
+            'groups': [],
+            'filters': []
+        }
+
+
+class DbFrame(Frame):
+    def build_frame(self):
+        self.tables = []
+
+       # Options frame contains structure relevant data and controls
+        self.options_frame = self.child_frame(grid_children=True)
+        self.options_frame.add_component(
+            'label',
+            {'text': 'DB Name: '}
+        )
+        self.db_name = self.options_frame.add_component('entry')
+        self.options_frame.add_component(
+            'button',
+            {'text': 'Add Table', 'command': self.add_table}
+        )
+        self.options_frame.add_component(
+            'button',
+            {'text': 'Clear Tables', 'command': self.clear_tables}
+        )
+        self.options_frame.add_component(
+            'button',
+            {'text': 'Export DB', 'command': self.export_db}
+        )
+        self.options_frame.pack()
+
+        # Tables frame is a container for TableFrame objects
+        self.tables_frame = self.child_frame()
+        self.tables_frame.pack()
+
+        self.update()
+
+
+    def update(self):
+        self.parent_frame.configure(
+                scrollregion=self.parent_frame.bbox('all')
+            )
+
+
+    @property
+    def name(self):
+        return self.db_name.get()
+
+
+    @property
+    def table_names(self):
+        return [table.name for table in self.tables]
+
+
+    def add_table(self):
+        table = TableFrame(
+            parent_obj=self,
+            parent_frame=self.tables_frame.frame
+        )
+        self.tables.append(table)
+        table.pack()
+
+
+    def remove_table(self, table):
+        table.clear_columns()
+        for component in table.frame.winfo_children():
+            component.destroy()
+        table.frame.destroy()
+        self.tables.remove(table)
+        self.update()
+
+
+    def clear_tables(self):
+        for table in self.tables:
+            table.clear_columns()
+            for component in table.frame.winfo_children():
+                component.destroy()
+            table.frame.destroy()
+        self.tables = []
+        self.update()
+            
+
+    def export_db(self):
+        db = {self.name: [table.config for table in self.tables]}
+        db = json.dumps(db)
+        print(db)
