@@ -69,7 +69,115 @@ class Frame:
                     self.cur_row += 1
                     self.cur_column = 0
 
+
+class FilterFrame(Frame):
+    def build_frame(self):
+        self.queries = {}
+
+        # Options frame contains structure relevant data and controls
+        self.options_frame = self.child_frame(grid_children=True)
+        self.options_frame.add_component(
+            'label',
+            {'text': 'Filter Name: '}
+        )
+        self.filter_name = self.options_frame.add_component('entry')
+        self.options_frame.add_component(
+            'button',
+            {
+                'text': 'Remove Filter',
+                'command': lambda: self.parent_obj.remove_filter(self)
+            }
+        )
+        self.options_frame.pack()
+
+        # Config frame contains option controls
+        self.config_frame = self.child_frame(max_columns=4, grid_children=True)
+        for query in (self.parent_obj.column_names + self.parent_obj.group_names):
+            self.queries[query] = tk.BooleanVar()
+            self.queries[query].set(False)
+            self.config_frame.add_component(
+                'check_button',
+                {
+                    'text': query,
+                    'variable': self.queries[query],
+                    'onvalue': True,
+                    'offvalue': False
+                }
+            )
+        self.config_frame.pack()
+
+
+    @property
+    def name(self):
+        return self.filter_name.get()
+
+
+    @property
+    def config(self):
+        return {
+            'name': snake_case(self.name),
+            'keys': [
+                snake_case(column)
+                for column, active in self.queries.items()
+                if active.get()
+            ]
+        }
+
                         
+class GroupFrame(Frame):
+    def build_frame(self):
+        self.columns = {}
+        
+        # Options frame contains structure relevant data and controls
+        self.options_frame = self.child_frame(grid_children=True)
+        self.options_frame.add_component(
+            'label',
+            {'text': 'Group Name: '}
+        )
+        self.group_name = self.options_frame.add_component('entry')
+        self.options_frame.add_component(
+            'button',
+            {
+                'text': 'Remove Group',
+                'command': lambda: self.parent_obj.remove_group(self)
+            }
+        )
+        self.options_frame.pack()
+
+        # Config frame contains option controls
+        self.config_frame = self.child_frame(max_columns=4, grid_children=True)
+        for column in self.parent_obj.column_names:
+            self.columns[column] = tk.BooleanVar()
+            self.columns[column].set(False)
+            self.config_frame.add_component(
+                'check_button',
+                {
+                    'text': column,
+                    'variable': self.columns[column],
+                    'onvalue': True,
+                    'offvalue': False
+                }
+            )
+        self.config_frame.pack()
+
+    
+    @property
+    def name(self):
+        return self.group_name.get()
+
+
+    @property
+    def config(self):
+        return {
+            'name': snake_case(self.name),
+            'keys': [
+                snake_case(column)
+                for column, active in self.columns.items()
+                if active.get()
+            ]
+        }
+
+
 class ColumnFrame(Frame):
     def build_frame(self):
         self.data_type = tk.StringVar(value='TEXT')
@@ -106,16 +214,6 @@ class ColumnFrame(Frame):
         
         # Config frame contains option controls
         self.config_frame = self.child_frame()
-        self.config_frame.add_component(
-            'check_button',
-            {
-                'text': 'NOT NULL',
-                'variable': self.not_null,
-                'onvalue': 'NOT NULL',
-                'offvalue': ''
-            }
-        )
-        self.config_frame.pack()
 
         self.data_type_selector = self.config_frame.child_frame(grid_children=True)
         self.data_type_selector.add_component(
@@ -132,6 +230,17 @@ class ColumnFrame(Frame):
                 }
             )
         self.data_type_selector.pack()
+
+        not_null_box = self.config_frame.add_component(
+            'check_button',
+            {
+                'text': 'NOT NULL',
+                'variable': self.not_null,
+                'onvalue': 'NOT NULL',
+                'offvalue': ''
+            }
+        )
+        not_null_box.pack()
 
         self.column_class_frame = self.config_frame.child_frame(
             max_columns=2,
@@ -202,6 +311,7 @@ class ColumnFrame(Frame):
         self.return_selector.frame.grid(column=1, row=0)
         self.references_selector.grid_components()
         self.references_selector.frame.grid(column=1, row=1)
+        self.config_frame.pack()
         self.toggle_return_selector(value=False)
         self.toggle_references_selector(value=False)
         
@@ -302,6 +412,8 @@ class ColumnFrame(Frame):
 class TableFrame(Frame):
     def build_frame(self):
         self.columns = []
+        self.groups = []
+        self.filters = []
 
         # Options frame contains structure relevant data and controls
         self.options_frame = self.child_frame(grid_children=True)
@@ -331,28 +443,32 @@ class TableFrame(Frame):
         )
         self.button_matrix.add_component(
             'button',
-            {'text': 'Add Group', 'command': self.add_column}
+            {'text': 'Add Group', 'command': self.add_group}
         )
         self.button_matrix.add_component(
             'button',
-            {'text': 'Clear Groups', 'command': self.clear_columns}
+            {'text': 'Clear Groups', 'command': self.clear_groups}
         )
         self.button_matrix.add_component(
             'button',
-            {'text': 'Add Filter', 'command': self.add_column}
+            {'text': 'Add Filter', 'command': self.add_filter}
         )
         self.button_matrix.add_component(
             'button',
-            {'text': 'Clear Filters', 'command': self.clear_columns}
+            {'text': 'Clear Filters', 'command': self.clear_filters}
         )
         self.options_frame.pack()
         self.button_matrix.grid_components()
         self.button_matrix.frame.grid(column=1, row=1)
 
         
-        # Columns frame is a container for ColumnFrame objects
+        # Container Frames
         self.columns_frame = self.child_frame()
+        self.groups_frame = self.child_frame()
+        self.filters_frame = self.child_frame()
         self.columns_frame.pack()
+        self.groups_frame.pack()
+        self.filters_frame.pack()
 
         self.update()
 
@@ -367,11 +483,47 @@ class TableFrame(Frame):
         self.update()
 
 
+    def add_group(self):
+        group = GroupFrame(
+            parent_obj=self,
+            parent_frame=self.groups_frame.frame
+        )
+        self.groups.append(group)
+        group.pack()
+        self.update()
+
+
+    def add_filter(self):
+        filter = FilterFrame(
+            parent_obj=self,
+            parent_frame=self.filters_frame.frame
+        )
+        self.filters.append(filter)
+        filter.pack()
+        self.update()
+
+
     def remove_column(self, column):
         for component in column.frame.winfo_children():
             component.destroy()
         self.columns.remove(column)
         column.frame.destroy()
+        self.update()
+
+
+    def remove_group(self, group):
+        for component in group.frame.winfo_children():
+            component.destroy()
+        self.groups.remove(group)
+        group.frame.destroy()
+        self.update()
+
+
+    def remove_filter(self, filter):
+        for component in filter.frame.winfo_children():
+            component.destroy()
+        self.filters.remove(filter)
+        filter.frame.destroy()
         self.update()
 
 
@@ -384,6 +536,24 @@ class TableFrame(Frame):
         self.update()
 
 
+    def clear_groups(self):
+        for group in self.groups:
+            for component in group.frame.winfo_children():
+                component.destroy()
+            group.frame.destroy()
+        self.groups = []
+        self.update()
+
+
+    def clear_filters(self):
+        for filter in self.filters:
+            for component in filter.frame.winfo_children():
+                component.destroy()
+            filter.frame.destroy()
+        self.filters = []
+        self.update()
+
+
     @property
     def name(self):
         return self.table_name.get()
@@ -391,7 +561,12 @@ class TableFrame(Frame):
     
     @property
     def column_names(self):
-        return [column.name for column in self.columns]
+        return ([column.name for column in self.columns] + ['rowid'])
+
+
+    @property
+    def group_names(self):
+        return [group.name for group in self.groups]
 
 
     @property
@@ -400,7 +575,7 @@ class TableFrame(Frame):
             'table_name': snake_case(self.name),
             'dataclass_name': pascal_case(self.name)[:-1],
             'keys': [column.config for column in self.columns],
-            'groups': [],
+            'groups': [group.config for group in self.groups],
             'filters': []
         }
 
