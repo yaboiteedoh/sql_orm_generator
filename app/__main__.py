@@ -1,4 +1,4 @@
-from app_classes import TK
+from classes import TK
 
 
 TK.mainloop()

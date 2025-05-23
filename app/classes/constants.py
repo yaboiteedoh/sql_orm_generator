@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .widgets import DbFrame
+from .frontend_classes import DbFrame
 
 
 def configure_scrollbar():

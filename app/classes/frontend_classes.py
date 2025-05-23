@@ -4,6 +4,7 @@ from tkinter import ttk
 
 from utils import snake_case, pascal_case
 from .components import COMPONENTS
+from .backend_classes import Database
 
 
 class Frame:
@@ -116,7 +117,7 @@ class FilterFrame(Frame):
     def config(self):
         return {
             'name': snake_case(self.name),
-            'keys': [
+            'queries': [
                 snake_case(column)
                 for column, active in self.queries.items()
                 if active.get()
@@ -170,7 +171,7 @@ class GroupFrame(Frame):
     def config(self):
         return {
             'name': snake_case(self.name),
-            'keys': [
+            'columns': [
                 snake_case(column)
                 for column, active in self.columns.items()
                 if active.get()
@@ -394,16 +395,16 @@ class ColumnFrame(Frame):
             'name': self.name,
             'data_type': self.data_type.get(),
             'params': params,
-            'key_class_dict': {}
+            'column_class_dict': {}
         }
 
         if self.column_classes['returns'][0].get():
             returns = self.column_classes['returns'][1].get()
-            config_dict['key_class_dict']['returns'] = returns
+            config_dict['column_class_dict']['returns'] = returns
         if self.column_classes['references'][0].get():
             data = self.column_classes['references']
             references = f'{snake_case(data[1].get())}({snake_case(data[2].get())})'
-            config_dict['key_class_dict']['references'] = references
+            config_dict['column_class_dict']['references'] = references
 
         return config_dict
 
@@ -561,7 +562,7 @@ class TableFrame(Frame):
     
     @property
     def column_names(self):
-        return ([column.name for column in self.columns] + ['rowid'])
+        return [column.name for column in self.columns]
 
 
     @property
@@ -574,9 +575,9 @@ class TableFrame(Frame):
         return {
             'table_name': snake_case(self.name),
             'dataclass_name': pascal_case(self.name)[:-1],
-            'keys': [column.config for column in self.columns],
+            'columns': [column.config for column in self.columns],
             'groups': [group.config for group in self.groups],
-            'filters': []
+            'filters': [filter.config for filter in self.filters]
         }
 
 
@@ -657,6 +658,5 @@ class DbFrame(Frame):
             
 
     def export_db(self):
-        db = {self.name: [table.config for table in self.tables]}
-        db = json.dumps(db)
-        print(db)
+        db = Database(self.name, [table.config for table in self.tables])
+        return db
