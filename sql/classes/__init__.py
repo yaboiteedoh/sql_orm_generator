@@ -26,10 +26,10 @@ def configure_scrollbar():
 
     return canvas
 
+
 TK = tk.Tk()
 TK.title('TEEDOH\'S SQL ORM GENERATOR')
 TK.geometry('590x800')
 CANVAS = configure_scrollbar()
 _frame = DbFrame(parent_frame=CANVAS)
 CANVAS.create_window((0,0), window=_frame.frame, anchor='nw')
-
