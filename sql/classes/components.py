@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 
 COMPONENTS = {
@@ -7,5 +8,6 @@ COMPONENTS = {
     'radio_button': tk.Radiobutton,
     'option_menu': tk.OptionMenu,
     'label': tk.Label,
-    'entry': tk.Entry
+    'entry': tk.Entry,
+    'frame': ttk.Frame
 }

@@ -1,9 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog
 
 from utils import snake_case, pascal_case
 from templating import generate_filesystem, generate_module
-from file_config import save_config
+from file_config import save_config, load_config
 from .components import COMPONENTS
 from .backend_classes import Database
 
@@ -21,7 +21,7 @@ class Frame:
         self.max_columns = max_columns
         self.grid_children = grid_children
 
-        self.frame = ttk.Frame(self.parent_frame)
+        self.frame = COMPONENTS['frame'](self.parent_frame)
         self.components = []
 
         self.cur_column = 0
@@ -244,7 +244,7 @@ class ColumnFrame(Frame):
             )
         self.data_type_selector.pack()
 
-        not_null_box = self.config_frame.add_component(
+        self.not_null_box = self.config_frame.add_component(
             'check_button',
             {
                 'text': 'NOT NULL',
@@ -253,7 +253,7 @@ class ColumnFrame(Frame):
                 'offvalue': ''
             }
         )
-        not_null_box.pack()
+        self.not_null_box.pack()
 
         self.column_class_frame = self.config_frame.child_frame(
             max_columns=2,
@@ -271,14 +271,17 @@ class ColumnFrame(Frame):
                 'command': self.toggle_return_selector
             }
         )
+        self.return_type_checkboxes = []
         for return_type in ['Single', 'Group']:
-            self.return_selector.add_component(
-                'radio_button',
-                {
-                    'text': return_type,
-                    'variable': self.column_classes['returns'][1],
-                    'value': return_type.lower()
-                }
+            self.return_type_checkboxes.append(
+                    self.return_selector.add_component(
+                    'radio_button',
+                    {
+                        'text': return_type,
+                        'variable': self.column_classes['returns'][1],
+                        'value': return_type.lower()
+                    }
+                )
             )
 
         self.references_selector = self.column_class_frame.child_frame(
@@ -347,9 +350,8 @@ class ColumnFrame(Frame):
 
     def toggle_references_selector(self, value=None):
         s = self.column_classes['references'][0].get()
-        if s != None:
-            state = tk.NORMAL if s else tk.DISABLED
 
+        state = tk.NORMAL if s else tk.DISABLED
         if value != None:
             state = tk.NORMAL if value else tk.DISABLED
 
@@ -498,6 +500,7 @@ class TableFrame(Frame):
         self.columns.append(column)
         column.pack()
         self.update()
+        return column
 
 
     def add_group(self):
@@ -508,6 +511,7 @@ class TableFrame(Frame):
         self.groups.append(group)
         group.pack()
         self.update()
+        return group
 
 
     def add_filter(self):
@@ -518,6 +522,7 @@ class TableFrame(Frame):
         self.filters.append(filter)
         filter.pack()
         self.update()
+        return filter
 
 
     def remove_column(self, column):
@@ -620,6 +625,10 @@ class DbFrame(Frame):
             'button',
             {'text': 'Export DB', 'command': self.export_db}
         )
+        self.options_frame.add_component(
+            'button',
+            {'text': 'Import DB', 'command': self.import_db}
+        )
         self.options_frame.pack_components(fill=tk.X)
         self.options_frame.frame.pack(side=tk.TOP, anchor=tk.NW, fill=tk.X)
 
@@ -655,6 +664,7 @@ class DbFrame(Frame):
         self.tables.append(table)
         table.frame.grid(row=0, column=self.tables_frame.cur_column, sticky='n')
         self.tables_frame.cur_column += 1
+        return table
 
 
     def remove_table(self, table):
@@ -675,7 +685,14 @@ class DbFrame(Frame):
             table.frame.destroy()
         self.tables = []
         self.update()
-            
+
+
+    def import_db(self):
+        config_path = filedialog.askopenfilename()
+        print(config_path)
+        self.clear_tables()
+        load_config(config_path, self)
+
 
     def export_db(self):
         config = self.config
@@ -688,3 +705,4 @@ class DbFrame(Frame):
     @property
     def config(self):
         return {self.name: [table.config for table in self.tables]}
+

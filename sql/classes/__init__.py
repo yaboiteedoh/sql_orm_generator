@@ -40,3 +40,4 @@ TK.geometry('590x800')
 CANVAS = configure_scrollbar()
 _frame = DbFrame(parent_frame=CANVAS)
 CANVAS.create_window((0,0), window=_frame.frame, anchor='nw')
+
