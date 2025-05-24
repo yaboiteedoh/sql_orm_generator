@@ -22,8 +22,8 @@ class Database:
             group_names = [group.name for group in table.groups]
             filter_names = [filter.name for filter in table.filters]
 
-            if not table.name:
-                msg = 'DATABASE CONTAINS AN UNNAMED TABLE'
+            if (not table.name or len(table.name) < 1):
+                msg = f'INVALID TABLE NAME: {table.name if table.name else "NONE"}'
                 raise ValueError(msg)
 
             if table_names.count(table.name) > 1:
@@ -53,10 +53,10 @@ class Database:
                         msg = f'REFERENCE COLUMN {column.name} ON TABLE {table.name} REFERENCES NONEXISTENT TABLE {column.classes.references}'
                         raise ValueError(msg)
                     target_column_check = [
-                        t for t in table.columns
+                        t for t in target_table_check[0].columns
                         if t.name == target_column
                     ]
-                    if not target_column_check:
+                    if (not target_column_check and target_column != 'rowid'):
                         msg = f'REFERENCE COLUMN {column.name} ON TABLE {table.name} REFERENCES NONEXISTENT COLUMN {column.classes.references}'
                         raise ValueError(msg)
 
@@ -150,7 +150,6 @@ class Table:
             Group(self.columns, **group)
             for group in groups
         ]
-        print(filters)
         self.filters = [
             Filter(self.columns, self.groups, **filter)
             for filter in filters
@@ -170,8 +169,7 @@ class Column:
         params,
         column_class_dict
     ):
-        self.data_type = data_type
-        match self.data_type:
+        match data_type:
             case 'TEXT':
                 self.py_data_type = 'str'
             case 'INTEGER':
@@ -180,6 +178,7 @@ class Column:
                 msg = f'INVALID DATA TYPE FOR COLUMN: {self.name}, {self.data_type}'
                 raise ValueError(msg)
 
+        self.data_type = data_type
         self.name = name
         self.params = params
         self.classes = ColumnClass(**column_class_dict)

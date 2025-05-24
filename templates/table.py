@@ -130,7 +130,7 @@ class {{ table.dataclass }}sTable(SQLiteTable):
             sql = '''
                 SELECT * FROM {{ table.name }}
                 WHERE
-                    {% if isinstance(filter.queries[0], DBKeyGroup) %}({{ filter.queries[0].keys[0].name }}=?{% for key in filter.queries[0].keys %} OR {{ key.name }}=?{% endfor %}){% else %}{{ filter.queries[0].name }}=?{% endif %}{% for key in filter.queries[1:] %}{% if isinstance(key, DBKeyGroup) %}
+                    {% if isinstance(filter.queries[0], DBKeyGroup) %}({{ filter.queries[0].keys[0].name }}=?{% for key in filter.queries[0].keys %} OR {{ key.name }}=?{% endfor %}){% else %}{{ filter.queries[0].name }}=?{% endif %}{% for query in filter.queries[1:] %}{% if isinstance(key, DBKeyGroup) %}
                     AND
                         ({% for i, group_key in enumerate(key.keys) %}{{ group_key.name }}=?{% if i < key.length %} OR {% endif %}{% endfor %}){% else %}
                     AND

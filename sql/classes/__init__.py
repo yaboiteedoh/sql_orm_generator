@@ -9,16 +9,23 @@ def configure_scrollbar():
     container.pack(fill=tk.BOTH, expand=1)
     
     canvas = tk.Canvas(container)
-    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-    scrollbar = ttk.Scrollbar(
+    y_scrollbar = ttk.Scrollbar(
         container,
         orient=tk.VERTICAL,
         command=canvas.yview
     )
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    x_scrollbar = ttk.Scrollbar(
+        container,
+        orient=tk.HORIZONTAL,
+        command=canvas.xview
+    )
+    y_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.configure(yscrollcommand=y_scrollbar.set)
+    canvas.configure(xscrollcommand=x_scrollbar.set)
     canvas.bind(
         '<Configure>',
         lambda e: canvas.configure(scrollregion=canvas.bbox('all'))

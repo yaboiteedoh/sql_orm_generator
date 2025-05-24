@@ -3,4 +3,4 @@ def snake_case(s):
 
 
 def pascal_case(s):
-    return s.title().replace(' ', '')
+    return s.title().replace(' ', '').replace('_', '')

@@ -1,3 +1,4 @@
+import json
 import os
 import jinja2
 from pathlib import Path
@@ -9,21 +10,15 @@ env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates))
 TABLE = env.get_template('table.txt')
 
 
-def generate_module(db):
-    fs = generate_filesystem(db)
-
-    for table in db.tables:
-        render_table_template(table, fs)
-
-
 def generate_filesystem(db):
     fs = {'path': Path(db.name)}
     fs['path'].mkdir()
     fs['init'] = Path(db.name, '__init__.py')
     fs['database'] = Path(db.name, 'database.py')
+    fs['config'] = Path(db.name, f'{db.name}_config.json')
 
     fs['tables'] = {'path': Path(db.name, 'tables')}
-    fs['tables'].mkdir()
+    fs['tables']['path'].mkdir()
     fs['tables']['init'] = Path(db.name, 'tables', '__init__.py')
 
     fs['classes'] = {'path': Path(db.name, 'classes')}
@@ -38,11 +33,16 @@ def generate_filesystem(db):
     return fs
 
 
+def generate_module(db, fs):
+    for table in db.tables:
+        render_table_template(table, fs)
+
+
 def render_table_template(table, fs):
     table_class = TABLE.render(
         table=table,
         enumerate=enumerate
     )
-    
+
     with open(fs['tables'][table.name], 'w') as f:
         f.write(table_class)

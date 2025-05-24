@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from utils import snake_case, pascal_case
+from templating import generate_filesystem, generate_module
+from file_config import save_config
 from .components import COMPONENTS
 from .backend_classes import Database
 
@@ -54,20 +56,31 @@ class Frame:
         if self.grid_children:
             self.grid_components()
         else:
-            for component in self.components:
-                component.pack
-        self.frame.pack()
+            self.pack_components(fill=tk.X)
+        self.frame.pack(fill=tk.X)
 
 
     def grid_components(self):
         for component in self.components:
-            component.grid(row=self.cur_row, column=self.cur_column)
+            component.grid(row=self.cur_row, column=self.cur_column, sticky=tk.NSEW)
             self.cur_column += 1
 
             if self.max_columns:
                 if self.cur_column > self.max_columns:
                     self.cur_row += 1
                     self.cur_column = 0
+
+
+    def countdown_cur_column():
+        self.cur_column -= 1
+
+
+    def pack_components(self, fill=None):
+        for component in self.components:
+            if fill:
+                component.pack(fill=fill)
+            else:
+                component.pack(fill=tk.X)
 
 
 class FilterFrame(Frame):
@@ -91,7 +104,7 @@ class FilterFrame(Frame):
         self.options_frame.pack()
 
         # Config frame contains option controls
-        self.config_frame = self.child_frame(max_columns=4, grid_children=True)
+        self.config_frame = self.child_frame(max_columns=2, grid_children=True)
         for query in (self.parent_obj.column_names + self.parent_obj.group_names):
             self.queries[query] = tk.BooleanVar()
             self.queries[query].set(False)
@@ -109,13 +122,13 @@ class FilterFrame(Frame):
 
     @property
     def name(self):
-        return self.filter_name.get()
+        return snake_case(self.filter_name.get())
 
 
     @property
     def config(self):
         return {
-            'name': snake_case(self.name),
+            'name': self.name,
             'queries': [
                 snake_case(column)
                 for column, active in self.queries.items()
@@ -145,7 +158,7 @@ class GroupFrame(Frame):
         self.options_frame.pack()
 
         # Config frame contains option controls
-        self.config_frame = self.child_frame(max_columns=4, grid_children=True)
+        self.config_frame = self.child_frame(max_columns=2, grid_children=True)
         for column in self.parent_obj.column_names:
             self.columns[column] = tk.BooleanVar()
             self.columns[column].set(False)
@@ -163,13 +176,13 @@ class GroupFrame(Frame):
     
     @property
     def name(self):
-        return self.group_name.get()
+        return snake_case(self.group_name.get())
 
 
     @property
     def config(self):
         return {
-            'name': snake_case(self.name),
+            'name': self.name,
             'columns': [
                 snake_case(column)
                 for column, active in self.columns.items()
@@ -367,7 +380,7 @@ class ColumnFrame(Frame):
 
         for table in self.parent_obj.parent_obj.tables:
             if table.name == table_name:
-                columns = table.column_names
+                columns = table.column_names + ['rowid']
         if not columns:
             return
 
@@ -383,12 +396,15 @@ class ColumnFrame(Frame):
 
     @property
     def name(self):
-        return self.column_name.get()
+        return snake_case(self.column_name.get())
 
 
     @property
     def config(self):
-        params = f'{self.not_null.get()}'
+        if self.not_null.get():
+            params = f' {self.not_null.get()}'
+        else:
+            params = ''
 
         config_dict = {
             'name': self.name,
@@ -429,7 +445,9 @@ class TableFrame(Frame):
                 'command': lambda: self.parent_obj.remove_table(self)
             }
         )
-        self.button_matrix = self.options_frame.child_frame(
+
+        # Matrix for placing column group and filter controls
+        self.button_matrix = self.child_frame(
             max_columns=1,
             grid_children=True
         )
@@ -459,17 +477,16 @@ class TableFrame(Frame):
         )
         self.options_frame.pack()
         self.button_matrix.grid_components()
-        self.button_matrix.frame.grid(column=1, row=1)
 
         
         # Container Frames
         self.columns_frame = self.child_frame()
         self.groups_frame = self.child_frame()
         self.filters_frame = self.child_frame()
-        self.columns_frame.pack()
-        self.groups_frame.pack()
+        self.columns_frame.pack(),
+        self.groups_frame.pack(),
         self.filters_frame.pack()
-
+        self.button_matrix.frame.pack()
         self.update()
 
 
@@ -556,7 +573,7 @@ class TableFrame(Frame):
 
     @property
     def name(self):
-        return self.table_name.get()
+        return snake_case(self.table_name.get())
 
     
     @property
@@ -572,7 +589,7 @@ class TableFrame(Frame):
     @property
     def config(self):
         return {
-            'table_name': snake_case(self.name),
+            'table_name': self.name,
             'dataclass_name': pascal_case(self.name)[:-1],
             'columns': [column.config for column in self.columns],
             'groups': [group.config for group in self.groups],
@@ -603,16 +620,18 @@ class DbFrame(Frame):
             'button',
             {'text': 'Export DB', 'command': self.export_db}
         )
-        self.options_frame.pack()
+        self.options_frame.pack_components(fill=tk.X)
+        self.options_frame.frame.pack(side=tk.TOP, anchor=tk.NW, fill=tk.X)
 
         # Tables frame is a container for TableFrame objects
-        self.tables_frame = self.child_frame()
+        self.tables_frame = self.child_frame(grid_children=True)
         self.tables_frame.pack()
 
         self.update()
 
 
     def update(self):
+        self.parent_frame.update_idletasks()
         self.parent_frame.configure(
                 scrollregion=self.parent_frame.bbox('all')
             )
@@ -620,7 +639,7 @@ class DbFrame(Frame):
 
     @property
     def name(self):
-        return self.db_name.get()
+        return snake_case(self.db_name.get())
 
 
     @property
@@ -634,7 +653,8 @@ class DbFrame(Frame):
             parent_frame=self.tables_frame.frame
         )
         self.tables.append(table)
-        table.pack()
+        table.frame.grid(row=0, column=self.tables_frame.cur_column, sticky='n')
+        self.tables_frame.cur_column += 1
 
 
     def remove_table(self, table):
@@ -643,6 +663,7 @@ class DbFrame(Frame):
             component.destroy()
         table.frame.destroy()
         self.tables.remove(table)
+        self.tables_frame.cur_column -= 1
         self.update()
 
 
@@ -657,5 +678,13 @@ class DbFrame(Frame):
             
 
     def export_db(self):
-        db = Database(self.name, [table.config for table in self.tables])
-        return db
+        config = self.config
+        for db_name, tables_list in config.items():
+            db = Database(db_name, tables_list)
+            fs = generate_filesystem(db)
+            save_config(config, fs)
+            generate_module(db, fs)
+
+    @property
+    def config(self):
+        return {self.name: [table.config for table in self.tables]}
