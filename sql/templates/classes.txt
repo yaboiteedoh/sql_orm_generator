@@ -1,0 +1,32 @@
+import sqlite3
+
+
+class SQLiteTable:
+    def __init__(self):
+        self.db_dir = 'path'
+        self.dataclass = None
+        self._table_name = 'base'
+        self._list_columns = {}
+        self._single_columns = {}
+        self._other_columns = {}
+        self._groups = {}
+        self._filters = {}
+
+
+    def init_db(self):
+            pass
+
+
+    def _dataclass_row_factory(self, cur, row):
+        fields = [column[0] for column in cur.description]
+        as_dict = {key: value for key, value in zip(fields, row)}
+        return self.dataclass(**as_dict)
+
+
+    def _reset_table(self):
+        with sqlite3.connect(self.db_dir) as con:
+            cur = con.cursor()
+            sql = f'DROP TABLE {self._table_name}'
+            cur.execute(sql)
+
+        self.init_db()

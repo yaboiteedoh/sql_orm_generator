@@ -18,7 +18,6 @@ def load_config(config_path, db_frame):
         db_frame.db_name.delete(0, tk.END)
         db_frame.db_name.insert(0, db_name)
         
-        # tables = order_tables(tables)
         for table in tables:
             table_frame = db_frame.add_table()
             table_frame.table_name.insert(0, table['table_name'])
@@ -67,33 +66,9 @@ def load_config(config_path, db_frame):
                 for column in group['columns']:
                     group_frame.columns[column].set(True)
 
-
             for filter in table['filters']:
                 filter_frame = table_frame.add_filter()
                 filter_frame.filter_name.insert(0, filter['name'])
                 for query in filter['queries']:
                     filter_frame.queries[query].set(True)
-
-
-                    # This is a fucking mess
-def order_tables(tables):
-    table_order = []
-    for table in tables:
-        referenced_tables = [
-            column['column_class_dict']['references'].split('(')[0]
-            for column in table['columns']
-            if 'references' in column['column_class_dict']
-        ]
-        if referenced_tables:
-            index = 0
-            for i, t in enumerate(table_order):
-                if table['table_name'] in referenced_tables:
-                    index = i + 1
-
-            table_order.insert(index, table)
-
-        else:
-            table_order.insert(0, table)
-
-    return table_order
 

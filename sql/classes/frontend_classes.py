@@ -697,10 +697,13 @@ class DbFrame(Frame):
     def export_db(self):
         config = self.config
         for db_name, tables_list in config.items():
+            path = filedialog.askdirectory()
+            print(path)
             db = Database(db_name, tables_list)
-            fs = generate_filesystem(db)
-            save_config(config, fs)
+            fs = generate_filesystem(path, db)
+            print(fs)
             generate_module(db, fs)
+            save_config(config, fs)
 
     @property
     def config(self):

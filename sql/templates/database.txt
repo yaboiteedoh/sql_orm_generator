@@ -1,0 +1,24 @@
+import sqlite3
+
+from .tables import ({% for table in tables %}
+    {{ table.dataclass }}sTable,{% endfor %}
+)
+
+
+class Database:
+    def __init__(self):
+        self.tables = []
+        {% for table in tables %}
+        self.{{ table.name }} = {{ table.dataclass }}sTable()
+        self.tables.append(self.{{ table.name }})
+        {% endfor %}
+        for table in self.tables:
+            try:
+                table.init_db()
+            except sqlite3.OperationalError as e:
+                error = str(e)
+                if error[-14:] == 'already exists':
+                    continue
+                else:
+                    raise e
+

@@ -1,16 +1,16 @@
 import sqlite3
 from pathlib import Path
 
-from classes.classes import SQLiteTable
-from classes.dataclasses import {{ table.dataclass }}
+from ..classes.classes import SQLiteTable
+from ..classes.dataclasses import {{ table.dataclass }}
 
 
 class {{ table.dataclass }}sTable(SQLiteTable):
     def __init__(self):
-        self.db_dir = str(Path('database', 'data.db'))
+        self.db_dir = str(Path('{{ db_name }}', 'data', 'data.db'))
         self.dataclass = {{ table.dataclass }}
         self._table_name = '{{ table.name }}'
-        self._list_columns { {% for column in table.list_columns %}
+        self._list_columns = { {% for column in table.list_columns %}
             '{{ column.name }}': self.read_by_{{ column.name }},{% endfor %}
         }
         self._single_columns = {
@@ -45,7 +45,7 @@ class {{ table.dataclass }}sTable(SQLiteTable):
 
 
     def add(self, {{ table.name[:-1] }}: dict) -> int:
-        with sqlite3.connct(self.db_dir) as con:
+        with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             sql = '''
                 INSERT INTO {{ table.name }}({% for i, column in enumerate(table.columns) %}
@@ -95,7 +95,7 @@ class {{ table.dataclass }}sTable(SQLiteTable):
             return cur.fetchone(){% endfor %}{% for group in table.groups %}
 
 
-    def read_by_{{ group.name }}(self, {{ group.name }}): {{ group.py_data_type}}) -> list[{{ table.dataclass }}] | {{ table.dataclass }}:
+    def read_by_{{ group.name }}(self, {{ group.name }}: {{ group.py_data_type}}) -> list[{{ table.dataclass }}] | {{ table.dataclass }}:
         with sqlite3.connect(self.db_dir) as con:
             cur = con.cursor()
             cur.row_factory = self._dataclass_row_factory
