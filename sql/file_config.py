@@ -6,9 +6,12 @@ from tkinter import filedialog
 def save_config(config, fs):
     print(json.dumps(config, indent=4))
     config_path = filedialog.askdirectory(title='Where to Save DB Config?')
-    for db_name in config.keys():
-        with open(Path(config_path, f'{db_name}_config.json'), 'w') as f:
-            json.dump(config, f)
+    for db in config.keys():
+        db_name = db
+    path = Path(config_path, f'{db_name}_config.json').resolve()
+    with open(path, 'w') as f:
+        json.dump(config, f)
+    return path
 
 
 def load_config():

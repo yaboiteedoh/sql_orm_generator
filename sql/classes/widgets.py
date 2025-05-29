@@ -1,36 +1,37 @@
 from tkinter import filedialog
 
+import teedoh_kinter as tk
+
 from utils import snake_case, pascal_case
 from templating import generate_filesystem, generate_module
 from file_config import save_config, load_config
-from .components import Frame
-from .backend_classes import Database
+from .classes import Database
 
 
-class GroupFrame(Frame):
+class GroupFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
         self.columns = {}
         
-        self.options = self.add_component('frame')
+        self.options = self.add_component(tk.Frame)
         self._group_name = self.options.add_component(
-            'labeled_entry',
+            tk.LabeledEntry,
             text='Group Name: '
         )
         self.options.add_component(
-            'button',
+            tk.Button,
             text='Remove Group',
             command=lambda: self.parent.remove(self)
         )
         self.config_frame = self.add_component(
-            'frame',
+            tk.Frame,
             max_columns=2,
             grid_children=True
         )
         for column in self.parent.parent.columns.children:
             self.columns[column.name] = self.config_frame.add_component(
-                'check_button',
+                tk.CheckButton,
                 text=column.name
             )
         self.update()
@@ -58,30 +59,30 @@ class GroupFrame(Frame):
         }
 
 
-class FilterFrame(Frame):
+class FilterFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
         self.queries = {}
 
-        self.options = self.add_component('frame')
+        self.options = self.add_component(tk.Frame)
         self._filter_name = self.options.add_component(
-            'labeled_entry',
+            tk.LabeledEntry,
             text='Filter Name: '
         )
         self.options.add_component(
-            'button',
+            tk.Button,
             text='Remove Filter',
             command=lambda: self.parent.remove(self)
         )
         self.config_frame = self.add_component(
-            'frame',
+            tk.Frame,
             max_columns=2,
             grid_children=True
         )
         for query in self.parent.parent.columns.children + self.parent.parent.groups.children:
             self.queries[query.name] = self.config_frame.add_component(
-                'check_button',
+                tk.CheckButton,
                 text=query.name
             )
         self.update()
@@ -109,70 +110,70 @@ class FilterFrame(Frame):
         }
 
 
-class ColumnFrame(Frame):
+class ColumnFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.options = self.add_component('frame')
+        self.options = self.add_component(tk.Frame)
         self._column_name = self.options.add_component(
-            'labeled_entry',
+            tk.LabeledEntry,
             text='Column Name: '
         )
         self.options.add_component(
-            'button',
+            tk.Button,
             text='Remove Column',
             command=lambda: self.parent.remove(self)
         )
-        self.config_frame = self.add_component('frame')
+        self.config_frame = self.add_component(tk.Frame)
         self.data_type_selector = self.config_frame.add_component(
-            'frame',
+            tk.Frame,
             grid_children=True
         )
         self.data_type_selector.add_component(
-            'label',
+            tk.Label,
             text='Data Type: '
         )
         self._data_type = self.data_type_selector.add_component(
-            'radio_menu',
+            tk.RadioMenu,
             options=['TEXT', 'INTEGER'],
             default='TEXT'
         )
         self._not_null = self.config_frame.add_component(
-            'check_button',
+            tk.CheckButton,
             text='NOT NULL',
             data_type='str',
             values=['', 'NOT NULL']
         )
         self.return_selector = self.config_frame.add_component(
-            'frame',
+            tk.Frame,
             grid_children=True
         )
         self._returns = self.return_selector.add_component(
-            'check_button',
+            tk.CheckButton,
             text='Returns'
         )
         self._unique = self.return_selector.add_component(
-            'check_button',
+            tk.CheckButton,
             text='UNIQUE',
             data_type='str',
             values=['group', 'single']
         )
         self._returns.add_trace(lambda: self.toggle_return_selector())
         self.references_selector = self.config_frame.add_component(
-            'frame',
+            tk.Frame,
             grid_children=True
         )
         self._references = self.references_selector.add_component(
-            'check_button',
+            tk.CheckButton,
             text='References'
         )
         self.table_selector = self.references_selector.add_component(
-            'labeled_option',
+            tk.LabeledOption,
             text='Table: ',
             options=[]
         )
         self.column_selector = self.references_selector.add_component(
-            'labeled_option',
+            tk.LabeledOption,
             text='Column: ',
             options=[]
         )
@@ -329,22 +330,22 @@ class ColumnFrame(Frame):
         return config_dict
 
 
-class TableFrame(Frame):
+class TableFrame(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.options = self.add_component('frame')
+        self.options = self.add_component(tk.Frame)
         self._table_name = self.options.add_component(
-            'labeled_entry',
+            tk.LabeledEntry,
             text='Table Name: '
         )
         self.options.add_component(
-            'button',
+            tk.Button,
             text='Remove Table',
             command=lambda: self.parent.remove(self)
         )
         self._options_buttons = self.options.add_component(
-            'button_matrix',
+            tk.ButtonMatrix,
             buttons=[
                 'Add Column',
                 'Clear Columns',
@@ -355,17 +356,17 @@ class TableFrame(Frame):
             ]
         )
         self.columns = self.add_component(
-            'dynamic_component_frame',
+            tk.DynamicComponentFrame,
             max_columns=0,
             child_class=ColumnFrame
         )
         self.groups = self.add_component(
-            'dynamic_component_frame',
+            tk.DynamicComponentFrame,
             max_columns=0,
             child_class=GroupFrame
         )
         self.filters = self.add_component(
-            'dynamic_component_frame',
+            tk.DynamicComponentFrame,
             max_columns=0,
             child_class=FilterFrame
         )
@@ -408,17 +409,17 @@ class TableFrame(Frame):
         }
 
 
-class DbFrame(Frame):
-    def __init__(self, parent, parent_frame):
-        super().__init__(parent, parent_frame=parent_frame)
+class DbFrame(tk.Frame):
+    def __init__(self, parent, parent_frame, fill):
+        super().__init__(parent, parent_frame=parent_frame, fill=fill)
 
-        self.options = self.add_component('frame')
+        self.options = self.add_component(tk.Frame)
         self._db_name = self.options.add_component(
-            'labeled_entry',
+            tk.LabeledEntry,
             text='DB Name: '
         )
         self._options_buttons = self.options.add_component(
-            'button_matrix',
+            tk.ButtonMatrix,
             max_columns=1,
             buttons=[
                 'Add Table',
@@ -428,7 +429,7 @@ class DbFrame(Frame):
             ]
         )
         self.tables = self.add_component(
-            'dynamic_component_frame',
+            tk.DynamicComponentFrame,
             child_class=TableFrame
         )
         for button in self._options_buttons.components:
@@ -444,13 +445,6 @@ class DbFrame(Frame):
 
         self.update()
 
-
-    def update(self):
-        self.parent_frame.update_idletasks()
-        self.parent_frame.configure(
-            scrollregion=self.parent_frame.bbox('all')
-        )
-        
 
     @property
     def name(self):

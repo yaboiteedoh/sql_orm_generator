@@ -1,7 +1,8 @@
 import json
 import os
-import jinja2
 from pathlib import Path
+
+import jinja2
 
 
 templates = os.path.expanduser('~/dev/sql_orm_generator/sql/templates/')
